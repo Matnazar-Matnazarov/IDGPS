@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% load humanize %}
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Sarlavha va Filtrlar -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-gray-900">
+                    {{ current_year }} yil statistikasi
+                </h1>
+                <div class="flex space-x-4">
+                    <select name="year" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        {% for yil in yillar %}
+                        <option value="{{ yil }}" {% if yil == current_year %}selected{% endif %}>{{ yil }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistika kartlari -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Abonentlar</h3>
+                <div class="space-y-4">
+                    {% for month_num, stats in monthly_stats.items %}
+                    <div class="border-t pt-4 first:border-t-0 first:pt-0">
+                        <h4 class="font-medium text-gray-700 mb-2">{{ stats.oy }}</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Oldingi oydan aktiv:</span>
+                                <span class="font-medium">{{ stats.abonent.oldingidagi_aktiv }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Oyda qo'shilgan:</span>
+                                <span class="font-medium text-green-600">+{{ stats.abonent.oylik_qoshilgan }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Jami aktiv:</span>
+                                <span class="font-medium text-blue-600">{{ stats.abonent.jami_aktiv }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">To'lovlar</h3>
+                <div class="space-y-4">
+                    {% for month_num, stats in monthly_stats.items %}
+                    <div class="border-t pt-4 first:border-t-0 first:pt-0">
+                        <h4 class="font-medium text-gray-700 mb-2">{{ stats.oy }}</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Oyda to'lamaganlar:</span>
+                                <span class="font-medium text-red-600">{{ stats.tolov.oylik_tolamaganlar|intcomma }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Oyda to'langanlar:</span>
+                                <span class="font-medium text-green-600">+{{ stats.tolov.oylik_tolaganlar|intcomma }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">GPS va SIM</h3>
+                <div class="space-y-4">
+                    {% for month_num, stats in monthly_stats.items %}
+                    <div class="border-t pt-4 first:border-t-0 first:pt-0">
+                        <h4 class="font-medium text-gray-700 mb-2">{{ stats.oy }}</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">O'tgan oy skladdagi:</span>
+                                <span class="font-medium">{{ stats.gps.otgan_oy_sklad | intcomma }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Hozir skladda bor:</span>
+                                <span class="font-medium">{{ stats.gps.hozir_skladda_bor | intcomma }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Oyda sotilgan:</span>
+                                <span class="font-medium text-green-600">{{ stats.gps.oylik_sotilgan | intcomma }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Jami sotilgan:</span>
+                                <span class="font-medium text-blue-600">{{ stats.gps.jami_sotilgan | intcomma }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">SIM kartalar:</span>
+                                <span class="font-medium">{{ stats.sim.oylik | intcomma }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Summalar</h3>
+                <div class="space-y-4">
+                    {% for month_num, stats in monthly_stats.items %}
+                    <div class="border-t pt-4 first:border-t-0 first:pt-0">
+                        <h4 class="font-medium text-gray-700 mb-2">{{ stats.oy }}</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Umumiy tushum:</span>
+                                <span class="font-medium text-green-600">{{ stats.summa.oylik_umumiy_summa|floatformat:0 | intcomma }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Abonent to'lov:</span>
+                                <span class="font-medium text-blue-600">{{ stats.summa.oylik_abonent|floatformat:0 | intcomma }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const yearSelect = document.querySelector('select[name="year"]');
+        
+        yearSelect.addEventListener('change', function() {
+            window.location.href = `?year=${yearSelect.value}`;
+        });
+    });
+</script>
+{% endblock %}

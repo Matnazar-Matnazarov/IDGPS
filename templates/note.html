@@ -1,0 +1,315 @@
+{%extends 'base.html' %}
+{% block content%}
+{% if not is_edit and request.path != '/note/add/' %}
+    <!-- Note List View -->
+    <div class="container mx-auto px-4">
+        <div class="mt-6 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+                <div class="bg-primary/10 p-2 rounded-full">
+                    <i class="fas fa-sticky-note text-primary"></i>
+                </div>
+                <span class="animate-float">Eslatmalar</span>
+            </h1>
+            <a href="{% url 'note-add' %}" class="btn btn-primary gap-2 btn-sm md:btn-md">
+                <i class="fas fa-plus"></i>
+                <span class="hidden sm:inline">Yangi eslatma</span>
+                <span class="sm:hidden">Yangi</span>
+            </a>
+                </div>
+
+        <div class="mt-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for note in notes %}
+                    <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                        <div class="card-body">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="avatar placeholder">
+                                        <div class="bg-primary/10 text-primary rounded-full w-8">
+                                            <span class="text-xs">{{ note.user.username|slice:":2"|upper }}</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="badge badge-primary">{{ note.user.username }}</div>
+                                        <div class="text-xs text-base-content/70">{{ note.sana|date:"d.m.Y" }}</div>
+                                    </div>
+                                </div>
+                                        {% if note.user == request.user %}
+                                    <div class="dropdown dropdown-end">
+                                        <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-circle">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </div>
+                                        <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                                            <li>
+                                                <a href="{% url 'note-update' note.id %}" class="flex items-center text-info">
+                                                    <i class="fas fa-edit"></i>
+                                                    O'zgartirish
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="showDeleteConfirmation('{{ note.id }}', '{{ note.izoh|truncatechars:30 }}')" class="flex items-center text-error">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                    O'chirish
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="divider my-1"></div>
+                            
+                            <div class="whitespace-pre-wrap text-base-content break-words min-h-[80px] max-h-[200px] overflow-y-auto">
+                                {{ note.izoh }}
+                                </div>
+                            
+                            {% if note.modified %}
+                            <div class="text-xs text-base-content/60 mt-3 flex items-center">
+                                <i class="fas fa-clock mr-1"></i>
+                                <span>O'zgartirilgan: {{ note.modified|date:"d.m.Y H:i" }}</span>
+                            </div>
+                            {% endif %}
+                            </div>
+                        </div>
+                    {% empty %}
+                    <div class="col-span-1 md:col-span-2">
+                        <div class="card bg-base-100 shadow-xl">
+                            <div class="card-body items-center text-center py-12">
+                                <div class="rounded-full bg-base-200 p-6 mb-4">
+                                    <i class="fas fa-sticky-note text-5xl text-base-content/50"></i>
+                                </div>
+                                <h2 class="card-title">Eslatmalar yo'q</h2>
+                                <p class="text-base-content/70 mb-6">Muhim ma'lumotlarni saqlash uchun yangi eslatma yarating.</p>
+                                <a href="{% url 'note-add' %}" class="btn btn-primary gap-2">
+                                    <i class="fas fa-plus"></i>
+                                    <span>Birinchi eslatmani yaratish</span>
+                                </a>
+                            </div>
+                        </div>
+                        </div>
+                    {% endfor %}
+            </div>
+        </div>
+    </div>
+{% elif is_edit %}
+    <!-- Edit Note View -->
+    <div class="container mx-auto px-4">
+        <div class="mt-6 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+                <div class="bg-primary/10 p-2 rounded-full">
+                    <i class="fas fa-edit text-primary"></i>
+                </div>
+                <span class="animate-float">Eslatmani o'zgartirish</span>
+            </h1>
+            <a href="{% url 'note-list' %}" class="btn btn-ghost gap-2 btn-sm md:btn-md">
+                <i class="fas fa-arrow-left"></i>
+                <span class="hidden sm:inline">Orqaga</span>
+            </a>
+        </div>
+
+        <div class="mt-8">
+            <div class="card bg-base-100 shadow-xl max-w-2xl mx-auto">
+                <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-error mb-4">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>{{ error }}</span>
+                        </div>
+                    {% endif %}
+
+                    <form action="{% url 'note-update' note.id %}" method="POST" class="space-y-6">
+                        {% csrf_token %}
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Eslatma matni</span>
+                                <span class="label-text-alt text-error">*</span>
+                            </label>
+                        <div class="relative">
+                            <textarea 
+                                id="note" 
+                                name="note" 
+                                    rows="8" 
+                                maxlength="1000"
+                                    class="textarea textarea-bordered w-full" 
+                                    placeholder="Eslatma matnini kiriting..."
+                                required
+                                onkeyup="updateCharCount(this)"
+                            >{% if note %}{{ note.izoh }}{% endif %}</textarea>
+                            <div id="charCount" 
+                                     class="absolute bottom-3 right-3 text-xs bg-base-100/80 px-2 py-1 rounded-md">
+                                    1000
+                                </div>
+                        </div>
+                    </div>
+
+                        <div class="card-actions justify-end mt-6">
+                            <button type="button" class="btn btn-ghost gap-2" onclick="resetForm()">
+                                <i class="fas fa-undo"></i>
+                                <span>Bekor qilish</span>
+                            </button>
+                            <button type="submit" class="btn btn-primary gap-2">
+                                <i class="fas fa-save"></i>
+                                <span>Saqlash</span>
+                    </button>
+                        </div>
+                </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <!-- Add Note View -->
+    <div class="container mx-auto px-4">
+        <div class="mt-6 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+                <div class="bg-primary/10 p-2 rounded-full">
+                    <i class="fas fa-plus-circle text-primary"></i>
+                </div>
+                <span class="animate-float">Yangi eslatma</span>
+            </h1>
+            <a href="{% url 'note-list' %}" class="btn btn-ghost gap-2 btn-sm md:btn-md">
+                <i class="fas fa-arrow-left"></i>
+                <span class="hidden sm:inline">Orqaga</span>
+            </a>
+        </div>
+
+        <div class="mt-8">
+            <div class="card bg-base-100 shadow-xl max-w-2xl mx-auto">
+                <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-error mb-4">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>{{ error }}</span>
+                        </div>
+                    {% endif %}
+
+                    <form action="{% url 'note-add' %}" method="POST" class="space-y-6" id="note-form">
+                        {% csrf_token %}
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Eslatma matni</span>
+                                <span class="label-text-alt text-error">*</span>
+                            </label>
+                        <div class="relative">
+                            <textarea 
+                                id="note" 
+                                name="note" 
+                                    rows="8" 
+                                maxlength="1000"
+                                    class="textarea textarea-bordered w-full" 
+                                    placeholder="Eslatma matnini kiriting..."
+                                required
+                                onkeyup="updateCharCount(this)"
+                            ></textarea>
+                            <div id="charCount" 
+                                     class="absolute bottom-3 right-3 text-xs bg-base-100/80 px-2 py-1 rounded-md">
+                                    1000
+                                </div>
+                        </div>
+                    </div>
+
+                        <div class="card-actions justify-end mt-6">
+                            <button type="button" class="btn btn-ghost gap-2" onclick="resetForm()">
+                                <i class="fas fa-undo"></i>
+                                <span>Bekor qilish</span>
+                            </button>
+                            <button type="submit" class="btn btn-primary gap-2">
+                                <i class="fas fa-save"></i>
+                                <span>Saqlash</span>
+                    </button>
+                        </div>
+                </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+            <i class="fas fa-exclamation-triangle text-error"></i>
+            Eslatmani o'chirish
+        </h3>
+        <p class="py-4">Siz <span id="delete-note-title" class="font-semibold"></span> eslatmasini o'chirishni xohlaysizmi?</p>
+        <div class="alert alert-error mb-4">
+            <i class="fas fa-info-circle"></i>
+            <span>Bu amalni qaytarib bo'lmaydi!</span>
+        </div>
+        <div class="modal-action">
+            <form id="delete-form" action="" method="POST" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-error gap-2">
+                    <i class="fas fa-trash"></i>
+                    O'chirish
+                </button>
+            </form>
+            <button class="btn" onclick="closeDeleteModal()">Bekor qilish</button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</div>
+
+<script>
+    function updateCharCount(textarea) {
+        const maxLength = textarea.getAttribute('maxlength');
+        const currentLength = textarea.value.length;
+        const remaining = maxLength - currentLength;
+        const charCountElement = document.getElementById('charCount');
+        
+        charCountElement.textContent = remaining;
+        
+        if (remaining < 100) {
+            charCountElement.classList.add('text-error', 'font-bold');
+            charCountElement.classList.remove('text-base-content/70');
+        } else {
+            charCountElement.classList.add('text-base-content/70');
+            charCountElement.classList.remove('text-error', 'font-bold');
+        }
+    }
+
+    function resetForm() {
+        const form = document.getElementById('note-form');
+        if (form) {
+            form.reset();
+            const textarea = document.getElementById('note');
+            if (textarea) {
+                updateCharCount(textarea);
+            }
+        } else {
+            // For edit form, just reload the page
+            window.location.reload();
+        }
+    }
+
+    // Show delete confirmation modal
+    function showDeleteConfirmation(noteId, noteTitle) {
+        const modal = document.getElementById('delete-modal');
+        const form = document.getElementById('delete-form');
+        const titleSpan = document.getElementById('delete-note-title');
+        
+        form.action = `/note/delete/${noteId}/`;
+        titleSpan.textContent = noteTitle;
+        
+        modal.classList.add('modal-open');
+    }
+    
+    // Close delete confirmation modal
+    function closeDeleteModal() {
+        const modal = document.getElementById('delete-modal');
+        modal.classList.remove('modal-open');
+    }
+
+    window.addEventListener('load', function() {
+        const textarea = document.getElementById('note');
+        if (textarea) {
+            updateCharCount(textarea);
+        }
+    });
+</script>
+{%endblock%}

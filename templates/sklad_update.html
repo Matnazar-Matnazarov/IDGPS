@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+
+<div class="container mx-auto px-4">
+    <div class="mt-6 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+            <div class="bg-primary/10 p-2 rounded-full">
+                <i class="fas fa-edit text-primary"></i>
+            </div>
+            <span class="animate-float">GPS ma'lumotlarini tahrirlash</span>
+        </h1>
+        <a href="{% url 'sklad-list' %}" class="btn btn-ghost gap-2 btn-sm md:btn-md">
+            <i class="fas fa-arrow-left"></i>
+            <span class="hidden sm:inline">Orqaga</span>
+        </a>
+    </div>
+
+    <div class="mt-8">
+        <div class="card bg-base-100 shadow-xl max-w-2xl mx-auto">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-semibold text-base-content mb-6 flex items-center gap-2">
+                    <div class="bg-primary/10 p-2 rounded-full">
+                        <i class="fas fa-warehouse text-primary"></i>
+                    </div>
+                    GPS #{{ form.instance.gps_id }} ma'lumotlarini tahrirlash
+                </h2>
+                
+                <form method="POST" class="grid gap-6" id="sklad-update-form">
+                {% csrf_token %}
+                
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">GPS ID</span>
+                            <span class="label-text-alt text-error">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-map-marker-alt text-gray-400"></i>
+                            </span>
+                            {{ form.gps_id }}
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Olingan odam</span>
+                                <span class="label-text-alt text-error">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="btn btn-square btn-ghost">
+                                    <i class="fas fa-user text-gray-400"></i>
+                                </span>
+                                {{ form.olingan_odam }}
+                            </div>
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Telefon raqam</span>
+                                <span class="label-text-alt text-error">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="btn btn-square btn-ghost">
+                                    <i class="fas fa-phone text-gray-400"></i>
+                                </span>
+                                {{ form.tel_raqam }}
+                    </div>
+                </div>
+
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Summa</span>
+                                <span class="label-text-alt text-error">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="btn btn-square btn-ghost">
+                                    <i class="fas fa-money-bill-wave text-gray-400"></i>
+                                </span>
+                                <!-- Replace Django's rendered input with our custom input that has direct value -->
+                                <input type="text" 
+                                       name="summa_prixod" 
+                                       id="id_summa_prixod" 
+                                       value="{{ form.instance.summa_prixod|default:'' }}"
+                                       class="input input-bordered w-full" 
+                                       required>
+                            </div>
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/60">So'm ko'rinishida, raqamlar bilan kiriting</span>
+                            </label>
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Olingan sana</span>
+                                <span class="label-text-alt text-error">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="btn btn-square btn-ghost">
+                                    <i class="fas fa-calendar text-gray-400"></i>
+                                </span>
+                                {{ form.olingan_sana }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Holat</span>
+                        </label>
+                        <div class="flex items-center gap-4 px-4 py-2 rounded-lg bg-base-200">
+                            <div class="form-control">
+                                <label class="label cursor-pointer gap-2">
+                                    <!-- Replace the standard Django form field with a direct checkbox -->
+                                    <input type="checkbox" 
+                                           class="checkbox checkbox-success" 
+                                           name="sotildi_sotilmadi" 
+                                           id="id_sotildi_sotilmadi" 
+                                           value="True" 
+                                           {% if form.instance.sotildi_sotilmadi %}checked{% endif %} />
+                                    <span class="label-text">Sotilgan</span>
+                                </label>
+                            </div>
+                            <div class="ml-auto">
+                                <div class="badge badge-lg {% if form.instance.sotildi_sotilmadi %}badge-success{% else %}badge-error{% endif %} gap-1">
+                                    <i class="fas {% if form.instance.sotildi_sotilmadi %}fa-check-circle{% else %}fa-times-circle{% endif %}"></i>
+                                    <span id="status-text">{% if form.instance.sotildi_sotilmadi %}Sotilgan{% else %}Sotilmagan{% endif %}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="divider">Qo'shimcha ma'lumot</div>
+                    
+                    <div class="bg-base-200/50 p-4 rounded-lg">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div class="flex items-center gap-3">
+                                <div class="avatar placeholder">
+                                    <div class="bg-primary/10 text-primary rounded-full w-12">
+                                        <i class="fas fa-info-circle text-xl"></i>
+                                    </div>
+                                </div>
+                    <div>
+                                    <h3 class="font-medium">GPS haqida</h3>
+                                    <p class="text-sm text-base-content/70">GPS ID: <span class="font-medium">{{ form.instance.gps_id }}</span></p>
+                                </div>
+                            </div>
+                            <div class="stats shadow bg-base-100">
+                                <div class="stat p-2">
+                                    <div class="stat-title text-xs">Yaratilgan</div>
+                                    <div class="stat-value text-primary text-sm">{{ form.instance.olingan_sana|date:"d.m.Y" }}</div>
+                                    <div class="stat-desc text-xs">
+                                        <i class="fas fa-clock text-xs mr-1"></i> {% now "d.m.Y H:i" %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-actions justify-end mt-4 gap-2">
+                        <button type="button" class="btn btn-ghost gap-2" onclick="resetForm()">
+                            <i class="fas fa-undo"></i>
+                            <span>Bekor qilish</span>
+                        </button>
+                        <button type="submit" class="btn btn-primary gap-2">
+                            <i class="fas fa-save"></i>
+                            <span>Saqlash</span>
+                        </button>
+                    </div>
+                </form>
+                </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Format numeric inputs
+        const summaInput = document.getElementById('id_summa_prixod');
+        
+        if (summaInput) {
+            // Format the number immediately
+            if (summaInput.value && summaInput.value !== 'None') {
+                // Clean any potential non-numeric characters
+                let numericValue = summaInput.value.replace(/\D/g, '');
+                // Format with commas if it's a valid number
+                if (numericValue) {
+                    summaInput.value = parseInt(numericValue).toLocaleString('en-US');
+                }
+            }
+            
+            // Add event listener for future changes
+            summaInput.addEventListener('input', function() {
+                formatNumber(this);
+            });
+            
+            // Ensure the value is properly submitted - add form submit handler
+            const form = document.getElementById('sklad-update-form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    // Before submitting, clean the formatted number
+                    if (summaInput.value) {
+                        // Store the original formatted value for display
+                        const displayValue = summaInput.value;
+                        // Remove commas for submission
+                        summaInput.value = summaInput.value.replace(/,/g, '');
+                        
+                        // Add hidden input to preserve the original formatted value after submission
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'formatted_summa_prixod';
+                        hiddenInput.value = displayValue;
+                        form.appendChild(hiddenInput);
+                    }
+                });
+            }
+        }
+        
+        // Update status badge when checkbox changes
+        const statusCheckbox = document.getElementById('id_sotildi_sotilmadi');
+        if (statusCheckbox) {
+            // Initial update to ensure correct state
+            updateStatusBadge();
+            
+            // Add change event listener
+            statusCheckbox.addEventListener('change', function() {
+                updateStatusBadge();
+                console.log("Status changed to:", this.checked ? "Sotilgan" : "Sotilmagan");
+            });
+        }
+        
+        // Focus on first field
+        document.getElementById('id_gps_id').focus();
+    });
+    
+    // Format number with commas
+    function formatNumber(input) {
+        // Save cursor position
+        const cursorPos = input.selectionStart;
+        const oldLength = input.value.length;
+        
+        // If no value, exit early
+        if (!input.value) return;
+        
+        // Remove non-numeric characters
+        let value = input.value.replace(/\D/g, '');
+        
+        // Format with commas
+        if (value) {
+            value = parseInt(value, 10).toLocaleString('en-US');
+        }
+        
+        input.value = value;
+        
+        // Restore cursor position
+        const newLength = input.value.length;
+        const newCursorPos = cursorPos + (newLength - oldLength);
+        if (newCursorPos >= 0) {
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }
+    }
+    
+    // Update status badge
+    function updateStatusBadge() {
+        const statusCheckbox = document.getElementById('id_sotildi_sotilmadi');
+        const statusBadge = document.querySelector('.badge');
+        const statusText = document.getElementById('status-text');
+        
+        if (!statusCheckbox || !statusBadge || !statusText) {
+            console.error("One or more status elements not found");
+            return;
+        }
+        
+        console.log("Updating status badge, checkbox checked:", statusCheckbox.checked);
+        
+        if (statusCheckbox.checked) {
+            statusBadge.classList.remove('badge-error');
+            statusBadge.classList.add('badge-success');
+            const icon = statusBadge.querySelector('i');
+            if (icon) {
+                icon.classList.remove('fa-times-circle');
+                icon.classList.add('fa-check-circle');
+            }
+            statusText.textContent = 'Sotilgan';
+        } else {
+            statusBadge.classList.remove('badge-success');
+            statusBadge.classList.add('badge-error');
+            const icon = statusBadge.querySelector('i');
+            if (icon) {
+                icon.classList.remove('fa-check-circle');
+                icon.classList.add('fa-times-circle');
+            }
+            statusText.textContent = 'Sotilmagan';
+        }
+    }
+    
+    // Reset form to original values
+    function resetForm() {
+        // Store original formatted value and checkbox state
+        const summaInput = document.getElementById('id_summa_prixod');
+        const originalFormatted = summaInput ? summaInput.value : '';
+        const statusCheckbox = document.getElementById('id_sotildi_sotilmadi');
+        const originalStatus = statusCheckbox ? statusCheckbox.checked : false;
+        
+        // Reset the form
+        document.getElementById('sklad-update-form').reset();
+        
+        // Restore checkbox state if needed
+        if (statusCheckbox && originalStatus) {
+            statusCheckbox.checked = originalStatus;
+        }
+        
+        // Update status badge after reset
+        updateStatusBadge();
+        
+        // Restore formatted value
+        if (summaInput && originalFormatted) {
+            summaInput.value = originalFormatted;
+        }
+        
+        // Focus on first field
+        document.getElementById('id_gps_id').focus();
+    }
+</script>
+{% endblock %}

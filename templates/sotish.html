@@ -1,0 +1,392 @@
+{% extends 'base.html'%}
+{% load static %}
+{% load humanize %}
+{% block content %}
+
+<div class="container mx-auto px-4">
+    <div class="mt-6 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+            <i class="fas fa-shopping-cart text-primary"></i>
+            <span class="animate-float">Sotuvlar boshqaruvi</span>
+        </h1>
+        {% if request.path != '/sotuv/add/' %}
+        <a href="{% url 'sotish_add' %}" class="btn btn-primary gap-2">
+            <i class="fas fa-plus"></i>
+            Yangi sotuv qo'shish
+        </a>
+        {% else %}
+        <a href="{% url 'sotish_list' %}" class="btn btn-ghost gap-2">
+            <i class="fas fa-arrow-left"></i>
+            Orqaga
+        </a>
+        {% endif %}
+    </div>
+
+    {% if request.path != '/sotuv/add/' %}
+    <div class="mt-8">
+        <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-semibold text-base-content mb-4">
+                    <i class="fas fa-list text-primary mr-2"></i>
+                    Sotuvlar ro'yxati
+                </h2>
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra w-full">
+                <thead>
+                            <tr>
+                                <th class="bg-base-200">Mijoz</th>
+                                <th class="bg-base-200">Telefon raqam</th>
+                                <th class="bg-base-200">Sana</th>
+                                <th class="bg-base-200">Summasi</th>
+                                <th class="bg-base-200">Master</th>
+                                <th class="bg-base-200">Master Summasi</th>
+                                <th class="bg-base-200">Holat</th>
+                                <th class="bg-base-200">Amallar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sotish in sotish_items %}
+                            <tr class="hover transition-all duration-200">
+                                <td class="font-medium">{{ sotish.mijoz }}</td>
+                                <td>{{ sotish.mijoz_tel_raqam }}</td>
+                                <td>{{ sotish.sana }}</td>
+                                <td class="font-medium number-format">{{ sotish.summasi|intcomma }}</td>
+                                <td>{{ sotish.master }}</td>
+                                <td class="font-medium number-format">{{ sotish.master_summasi|intcomma }}</td>
+                                <td>
+                            {% if sotish.karta > 0 %}
+                                    <div class="badge badge-error gap-2">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        Qarzdor-{{sotish.karta|intcomma}}
+                                    </div>
+                            {% else %}
+                                    <div class="badge badge-success gap-2">
+                                        <i class="fas fa-check-circle"></i>
+                                        Sotilgan
+                                    </div>
+                            {% endif %}
+                        </td>
+                                <td>
+                                    <div class="flex gap-2">
+                            <a href="{% url 'sotish_update' sotish.pk %}" 
+                                           class="btn btn-ghost btn-sm">
+                                            <i class="fas fa-edit text-primary"></i>
+                            </a>
+                            <form method="post" action="{% url 'sotish_delete' sotish.id %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" 
+                                                    class="btn btn-ghost btn-sm"
+                                                    onclick="return confirm('Haqiqatan ham bu sotuvni o\'chirmoqchimisiz?');">
+                                                <i class="fas fa-trash-alt text-error"></i>
+                                </button>
+                            </form>
+                                    </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if request.path == '/sotuv/add/' %}
+    <div class="mt-8">
+        <form method="POST" class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-semibold text-base-content mb-6">
+                    <i class="fas fa-plus-circle text-primary mr-2"></i>
+                    Sotish Formasi
+                </h2>
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Mijoz ma'lumotlari -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Mijoz</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-user text-gray-400"></i>
+                            </span>
+                    {{form.mijoz}}
+                        </div>
+                </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Mijoz telefon raqami</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-phone text-gray-400"></i>
+                            </span>
+                    {{form.mijoz_tel_raqam}}
+                        </div>
+                </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Sana</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-calendar text-gray-400"></i>
+                            </span>
+                    {{form.sana}}
+                        </div>
+                </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Dasturiy ta'minot</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-laptop text-gray-400"></i>
+                            </span>
+                    {{form.dasturiy_taminot}}
+                        </div>
+                </div>
+
+                <!-- Login ma'lumotlari -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Username</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-user-circle text-gray-400"></i>
+                            </span>
+                    {{form.username}}
+                        </div>
+                </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Parol</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-lock text-gray-400"></i>
+                            </span>
+                    {{form.password}}
+                        </div>
+                </div>
+
+                <!-- Master ma'lumotlari -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Master</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-user-tie text-gray-400"></i>
+                            </span>
+                    {{form.master}}
+                        </div>
+                </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Master summasi</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-money-bill text-gray-400"></i>
+                            </span>
+                    <input type="text" name="master_summasi" id="master_summasi" 
+                                   class="input input-bordered w-full" 
+                           onkeyup="formatNumber(this);">
+                        </div>
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Bitta gps uchun abonent to'lov</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-credit-card text-gray-400"></i>
+                            </span>
+                            {{form.abonent_tulov}}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- To'lov ma'lumotlari -->
+                <div class="mt-8">
+                    <div class="card bg-base-200">
+                        <div class="card-body">
+                            <h3 class="card-title text-lg font-medium text-base-content mb-4">
+                                <i class="fas fa-money-check-alt text-primary mr-2"></i>
+                                To'lov ma'lumotlari
+                            </h3>
+                            
+                            <div class="form-control mb-4">
+                                <label class="label">
+                                    <span class="label-text font-medium">Gpslarning umumiy summa</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="btn btn-square btn-ghost">
+                                        <i class="fas fa-calculator text-gray-400"></i>
+                                    </span>
+                                    <input type="text" name="summasi" id="id_summasi" 
+                                           class="input input-bordered w-full" 
+                                           onkeyup="formatNumber(this); calculateQarz();">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text font-medium">Naqd</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="btn btn-square btn-ghost">
+                                            <i class="fas fa-money-bill-wave text-gray-400"></i>
+                                        </span>
+                                        <input type="text" name="naqd" id="naqd"
+                                               class="input input-bordered w-full" 
+                                               onkeyup="formatNumber(this); calculateQarz();">
+                                    </div>
+                                </div>
+
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text font-medium">Bank hisob</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="btn btn-square btn-ghost">
+                                            <i class="fas fa-university text-gray-400"></i>
+                                        </span>
+                                        <input type="text" name="bank_schot" id="bank_schot"
+                                               class="input input-bordered w-full" 
+                                               onkeyup="formatNumber(this); calculateQarz();">
+                                    </div>
+                                </div>
+
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text font-medium">Qarz</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="btn btn-square btn-ghost">
+                                            <i class="fas fa-hand-holding-usd text-gray-400"></i>
+                                        </span>
+                                        <input type="text" name="karta" id="karta" readonly 
+                                               class="input input-bordered w-full bg-gray-100">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GPS va SIM karta -->
+                <div id="gps-container" class="mt-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium text-base-content flex items-center gap-2">
+                            <i class="fas fa-satellite text-primary"></i>
+                            GPS qurilmalar
+                        </h3>
+            </div>
+
+                    <div class="gps-fields space-y-4">
+                        <div class="gps-field card bg-base-200">
+                            <div class="card-body">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <!-- GPS tanlash -->
+                                    <div class="form-control">
+                                        <label class="label">
+                                            <span class="label-text font-medium">GPS ID</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="btn btn-square btn-ghost">
+                                                <i class="fas fa-satellite text-gray-400"></i>
+                                            </span>
+                                            <select name="gps_id" class="gps-select select-bordered w-full" required onchange="updateGpsOptions()">
+                                    <option value="">GPS tanlang</option>
+                                    {% for gps in form.fields.gps_id.queryset %}
+                                        <option value="{{ gps.id }}">{{ gps.gps_id }}</option>
+                                    {% endfor %}
+                                </select>
+                                        </div>
+                            </div>
+
+                            <!-- SIM karta -->
+                                    <div class="form-control">
+                                        <label class="label">
+                                            <span class="label-text font-medium">SIM karta</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="btn btn-square btn-ghost">
+                                                <i class="fas fa-sim-card text-gray-400"></i>
+                                            </span>
+                                            <input type="text" name="sim_karta" class="input input-bordered w-full" required>
+                                        </div>
+                            </div>
+
+                            <!-- Mashina turi -->
+                                    <div class="form-control">
+                                        <label class="label">
+                                            <span class="label-text font-medium">Mashina turi</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="btn btn-square btn-ghost">
+                                                <i class="fas fa-car text-gray-400"></i>
+                                            </span>
+                                            <input type="text" name="mashina_turi" class="input input-bordered w-full" required placeholder="Masalan: Cobalt">
+                                        </div>
+                            </div>
+
+                            <!-- Davlat raqami -->
+                                    <div class="form-control">
+                                        <label class="label">
+                                            <span class="label-text font-medium">Davlat raqami</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="btn btn-square btn-ghost">
+                                                <i class="fas fa-hashtag text-gray-400"></i>
+                                            </span>
+                                            <input type="text" name="davlat_raqami" class="input input-bordered w-full" required placeholder="Masalan: 01A777AA">
+                                        </div>
+                            </div>
+                        </div>
+                                <div class="card-actions justify-end mt-4">
+                                    <button type="button" onclick="removeGpsField(this)" class="btn btn-error gap-2">
+                                        <i class="fas fa-trash-alt"></i>
+                            O'chirish
+                        </button>
+                    </div>
+                </div>
+                </div>
+                    </div>
+
+                    <div class="mt-4 flex justify-center">
+                        <button type="button" onclick="addGpsField()" 
+                                class="btn btn-success gap-2">
+                            <i class="fas fa-plus"></i>
+                            GPS qo'shish
+                        </button>
+                </div>
+            </div>
+
+                <div class="mt-8">
+                <button type="submit" 
+                            class="btn btn-primary w-full gap-2">
+                        <i class="fas fa-save"></i>
+                    Saqlash
+                </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<script src="{% static 'js/sotish.js' %}"></script>
+{% endblock %}

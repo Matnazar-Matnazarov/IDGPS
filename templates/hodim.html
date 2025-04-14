@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+            <i class="fas fa-user-tie text-primary"></i>
+            <span class="animate-float">Hodimlar ro'yxati</span>
+        </h1>
+    </div>
+
+    <div class="card bg-base-100 shadow-lg">
+        <div class="card-body p-4">
+            {% if request.path != '/hodimlar/create/' %}
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="card-title text-xl font-semibold text-base-content">
+                    <i class="fas fa-list text-primary mr-2"></i>
+                    Hodimlar ro'yxati
+                </h2>
+                <a href="{% url 'hodim-create' %}" class="btn btn-primary gap-2">
+                    <i class="fas fa-plus"></i>
+                    <span>Hodim qo'shish</span>
+                </a>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <th class="bg-base-200">#</th>
+                            <th class="bg-base-200">Ismi</th>
+                            <th class="bg-base-200">Familiyasi</th>
+                            <th class="bg-base-200">Lavozimi</th>
+                            <th class="bg-base-200">Username</th>
+                            <th class="bg-base-200">Amallar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for hodim in hodimlar %}
+                        <tr class="hover">
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ hodim.first_name }}</td>
+                            <td>{{ hodim.last_name }}</td>
+                            <td>{{ hodim.position }}</td>
+                            <td>{{ hodim.username }}</td>
+                            <td>
+                                <div class="flex items-center space-x-2">
+                                    <a href="{% url 'hodim-update' hodim.id %}" class="btn btn-sm btn-circle btn-info">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button onclick="confirmDelete('{{ hodim.id }}', '{{ hodim.first_name }} {{ hodim.last_name }}')" class="btn btn-sm btn-circle btn-error">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% elif request.path == '/hodimlar/create/' %}
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="card-title text-xl font-semibold text-base-content">
+                    <i class="fas fa-user-plus text-primary mr-2"></i>
+                    Yangi hodim qo'shish
+                </h2>
+                <a href="{% url 'hodim-list' %}" class="btn btn-outline btn-primary gap-2">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Orqaga</span>
+                </a>
+            </div>
+            
+            <form method="post" class="max-w-xl mx-auto">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    {% for field in form %}
+                    <div class="form-control w-full">
+                        <label class="label">
+                            <span class="label-text font-medium">{{ field.label }}</span>
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}
+                        <label class="label">
+                            <span class="label-text-alt text-info">{{ field.help_text }}</span>
+                        </label>
+                        {% endif %}
+                        {% if field.errors %}
+                        <label class="label">
+                            <span class="label-text-alt text-error">{{ field.errors|striptags }}</span>
+                        </label>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="flex justify-end mt-6">
+                    <button type="submit" class="btn btn-primary gap-2">
+                        <i class="fas fa-save"></i>
+                        <span>Saqlash</span>
+                    </button>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg">Hodimni o'chirish</h3>
+        <p class="py-4">Siz <span id="delete-name" class="font-semibold"></span> hodimini o'chirishni xohlaysizmi?</p>
+        <p class="text-sm text-error">Bu amalni qaytarib bo'lmaydi!</p>
+        <div class="modal-action">
+            <a href="#" id="confirm-delete-btn" class="btn btn-error">O'chirish</a>
+            <button class="btn" onclick="closeModal()">Bekor qilish</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmDelete(id, name) {
+        document.getElementById('delete-name').textContent = name;
+        document.getElementById('confirm-delete-btn').href = "{% url 'hodim-delete' 0 %}".replace('0', id);
+        document.getElementById('delete-modal').classList.add('modal-open');
+    }
+    
+    function closeModal() {
+        document.getElementById('delete-modal').classList.remove('modal-open');
+    }
+</script>
+{% endblock %}

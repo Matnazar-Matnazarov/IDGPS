@@ -1,0 +1,692 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+<div class="container mx-auto px-4">
+    <div class="mt-6 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+            <div class="bg-primary/10 p-2 rounded-full">
+                <i class="fas fa-money-bill-wave text-primary"></i>
+            </div>
+            <span class="animate-float">Rasxodlar boshqaruvi</span>
+        </h1>
+        {% if request.path != '/rasxod/add/' %}
+        <a href="{% url 'rasxod_add' %}" class="btn btn-primary gap-2 btn-sm md:btn-md">
+            <i class="fas fa-plus"></i>
+            <span class="hidden sm:inline">Yangi rasxod qo'shish</span>
+            <span class="sm:hidden">Yangi</span>
+        </a>
+        {% else %}
+        <a href="{% url 'rasxod_list' %}" class="btn btn-ghost gap-2 btn-sm md:btn-md">
+            <i class="fas fa-arrow-left"></i>
+            <span class="hidden sm:inline">Orqaga</span>
+        </a>
+        {% endif %}
+    </div>
+
+    {% if request.path != '/rasxod/add/' %}
+    <!-- Rasxodlar ro'yxati -->
+    <div class="mt-8">
+        <div class="card bg-base-100 shadow-xl overflow-hidden">
+            <div class="card-body p-0">
+                <!-- Filter and search tools -->
+                <div class="bg-base-200/50 p-4 border-b border-base-300">
+                    <div class="flex flex-col sm:flex-row gap-4 justify-between">
+                        <div class="relative flex-grow max-w-md">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                            <input type="text" id="search-input" 
+                                   class="input input-bordered w-full pl-10" 
+                                   placeholder="Rasxod nomini qidiring...">
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <div class="dropdown dropdown-end">
+                                <div tabindex="0" role="button" class="btn btn-outline btn-sm" id="date-filter-button">
+                                    <i class="fas fa-calendar-alt mr-2"></i> <span>Sana bo'yicha</span>
+                                </div>
+                                <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52" id="date-filter-dropdown">
+                                    <li><a class="date-filter" data-filter="all">Barcha sanalar</a></li>
+                                    <li><a class="date-filter" data-filter="today">Bugun</a></li>
+                                    <li><a class="date-filter" data-filter="week">Shu hafta</a></li>
+                                    <li><a class="date-filter" data-filter="month">Shu oy</a></li>
+                                </ul>
+                            </div>
+                            <button class="btn btn-outline btn-sm" id="sort-toggle">
+                                <i class="fas fa-sort mr-2"></i> <span>Saralash</span>
+                            </button>
+                            <button class="btn btn-outline btn-sm btn-error" id="reset-filters" onclick="resetFilters()">
+                                <i class="fas fa-undo mr-2"></i> <span>Filterni tozalash</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Data table -->
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra w-full">
+                        <thead>
+                            <tr>
+                                <th class="bg-base-200">#</th>
+                                <th class="bg-base-200">
+                                    <div class="flex items-center gap-1">
+                                        Rasxod nomi
+                                        <button onclick="setSortField('name')" class="btn btn-xs btn-ghost btn-circle">
+                                            <i class="fas fa-sort text-xs"></i>
+                                        </button>
+                                    </div>
+                                </th>
+                                <th class="bg-base-200">
+                                    <div class="flex items-center gap-1">
+                                        Sana
+                                        <button onclick="setSortField('date')" class="btn btn-xs btn-ghost btn-circle">
+                                            <i class="fas fa-sort text-xs"></i>
+                                        </button>
+                                    </div>
+                                </th>
+                                <th class="bg-base-200 text-right">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button onclick="setSortField('amount')" class="btn btn-xs btn-ghost btn-circle">
+                                            <i class="fas fa-sort text-xs"></i>
+                                        </button>
+                                        Summasi
+                                    </div>
+                                </th>
+                    {% if request.user.is_superuser %}
+                                <th class="bg-base-200 w-24">Amallar</th>
+                                {% endif %}
+                </tr>
+            </thead>
+                        <tbody id="rasxod-table-body">
+                {% for rasxod in rasxod_list %}
+                            <tr class="hover transition-colors duration-200" data-date="{{ rasxod.sana|date:'Y-m-d' }}" data-amount="{{ rasxod.summa }}" data-name="{{ rasxod.rasxod_nomi|lower }}">
+                                <td>{{ forloop.counter }}</td>
+                                <td class="font-medium">{{ rasxod.rasxod_nomi }}</td>
+                                <td><span class="badge badge-ghost">{{ rasxod.sana|date:"d.m.Y" }}</span></td>
+                                <td class="text-right font-medium">{{ rasxod.summa|floatformat:0|intcomma }}</td>
+                    {% if request.user.is_superuser %}
+                                <td>
+                                    <div class="flex items-center space-x-2 justify-center">
+                                        <a href="{% url 'rasxod_update' rasxod.pk %}" class="btn btn-ghost btn-sm btn-circle text-info tooltip" data-tip="Tahrirlash">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button onclick="confirmDelete('{{ rasxod.pk }}', '{{ rasxod.rasxod_nomi }}')" class="btn btn-ghost btn-sm btn-circle text-error tooltip" data-tip="O'chirish">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="{% if request.user.is_superuser %}5{% else %}4{% endif %}" class="text-center py-8">
+                                    <div class="flex flex-col items-center justify-center gap-2">
+                                        <i class="fas fa-inbox text-4xl text-base-300"></i>
+                                        <p class="text-base-content/70">Rasxodlar haqida ma'lumot topilmadi</p>
+                                        <a href="{% url 'rasxod_add' %}" class="btn btn-sm btn-primary mt-2">
+                                            <i class="fas fa-plus mr-1"></i> Yangi rasxod qo'shish
+                                        </a>
+                                    </div>
+                                </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+                
+                <!-- Status and pagination -->
+                <div class="bg-base-200/50 p-4 border-t border-base-300">
+                    <div class="flex flex-col sm:flex-row gap-4 justify-between items-center">
+                        <div class="text-sm text-base-content/70">
+                            <span id="visible-count">{{ rasxod_list|length }}</span> ta rasxod ko'rsatilyapti (jami: {{ rasxod_list|length }})
+                        </div>
+                        
+                        <!-- Summary cards -->
+                        <div class="flex flex-wrap gap-4">
+                            <div class="stats shadow bg-base-100">
+                                <div class="stat p-2">
+                                    <div class="stat-title text-xs">Jami rasxodlar</div>
+                                    <div class="stat-value text-primary text-xl">{{ rasxod_list|length }}</div>
+                                </div>
+                            </div>
+                            <div class="stats shadow bg-base-100">
+                                <div class="stat p-2">
+                                    <div class="stat-title text-xs">Umumiy summa</div>
+                                    <div class="stat-value text-secondary text-xl" id="total-amount">
+                                        {% if rasxod_list %}
+                                            {{ rasxod_list|dictsortreversed:"summa"|first|floatformat:0|intcomma }}
+                                        {% else %}
+                                            0
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% elif request.path == '/rasxod/add/' %}
+    <!-- Rasxod qo'shish formi -->
+    <div class="mt-8">
+        <div class="card bg-base-100 shadow-xl max-w-2xl mx-auto">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-semibold text-base-content mb-6">
+                    <div class="p-2 rounded-full bg-primary/10">
+                        <i class="fas fa-plus-circle text-primary"></i>
+                    </div>
+                    Yangi rasxod qo'shish
+                </h2>
+                
+                <form method="POST" class="grid gap-6" id="rasxod-form">
+        {% csrf_token %}
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Rasxod nomi</span>
+                            <span class="label-text-alt text-error">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-file-invoice text-gray-400"></i>
+                            </span>
+                            <input type="text" name="rasxod_nomi" id="rasxod_nomi" required placeholder="Rasxod nomini kiriting" 
+                                   class="input input-bordered w-full focus:border-primary" />
+                        </div>
+        </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Sana</span>
+                            <span class="label-text-alt text-error">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-calendar text-gray-400"></i>
+                            </span>
+            <input type="date" name="sana" id="sana" required
+                                   class="input input-bordered w-full focus:border-primary" />
+                        </div>
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Summasi</span>
+                            <span class="label-text-alt text-error">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-money-bill-wave text-gray-400"></i>
+                            </span>
+                            <input type="text" name="summasi" id="summasi" required placeholder="Summani kiriting" 
+                                   class="input input-bordered w-full focus:border-primary"
+                                   onkeyup="formatNumber(this)" />
+                        </div>
+                        <label class="label">
+                            <span class="label-text-alt text-base-content/60">So'm ko'rinishida, raqamlar bilan kiriting</span>
+                        </label>
+                    </div>
+                    
+                    <div class="divider">Rasxod haqida qo'shimcha ma'lumot</div>
+                    
+                    <div class="bg-base-200/50 p-4 rounded-lg">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div class="flex items-center gap-3">
+                                <div class="avatar placeholder">
+                                    <div class="bg-primary/10 text-primary rounded-full w-12">
+                                        <i class="fas fa-info-circle text-xl"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="font-medium">Rasxod haqida</h3>
+                                    <p class="text-sm text-base-content/70">Kiritilgan ma'lumotlarni tekshiring</p>
+                                </div>
+                            </div>
+                            <div class="stats shadow bg-base-100">
+                                <div class="stat p-2">
+                                    <div class="stat-title text-xs">Kiritilgan summa</div>
+                                    <div class="stat-value text-primary text-lg" id="formatted-amount">0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-actions justify-end mt-4">
+                        <button type="button" class="btn btn-ghost" onclick="resetForm()">
+                            <i class="fas fa-undo mr-2"></i>
+                            Bekor qilish
+                        </button>
+                        <button type="submit" class="btn btn-primary gap-2">
+                            <i class="fas fa-save"></i>
+                            <span>Saqlash</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+            <i class="fas fa-exclamation-triangle text-error"></i>
+            Rasxodni o'chirish
+        </h3>
+        <p class="py-4">Siz <span id="delete-name" class="font-semibold"></span> rasxodini o'chirishni xohlaysizmi?</p>
+        <div class="alert alert-error mb-4">
+            <i class="fas fa-info-circle"></i>
+            <span>Bu amalni qaytarib bo'lmaydi!</span>
+        </div>
+        <div class="modal-action">
+            <a href="#" id="confirm-delete-btn" class="btn btn-error gap-2">
+                <i class="fas fa-trash"></i>
+                O'chirish
+            </a>
+            <button class="btn" onclick="closeModal()">Bekor qilish</button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</div>
+
+        <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set today's date by default
+        const today = new Date().toISOString().split('T')[0];
+        if (document.getElementById('sana')) {
+            document.getElementById('sana').value = today;
+        }
+        
+        // Format number for currency input
+        if (document.getElementById('summasi')) {
+            document.getElementById('summasi').addEventListener('input', function() {
+                formatNumber(this);
+                updateFormattedAmount();
+            });
+        }
+        
+        // Search functionality
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                filterTable();
+            });
+        }
+        
+        // Initial total calculation
+        calculateTotal();
+        
+        // Sort toggle
+        const sortToggle = document.getElementById('sort-toggle');
+        if (sortToggle) {
+            sortToggle.addEventListener('click', function() {
+                sortTable();
+            });
+        }
+        
+        // Date filters
+        const dateFilters = document.querySelectorAll('.date-filter');
+        dateFilters.forEach(filter => {
+            filter.addEventListener('click', function(e) {
+                e.preventDefault();
+                filterByDate(this.dataset.filter);
+                
+                // Update filter button text
+                const filterText = this.textContent.trim();
+                const filterButton = document.getElementById('date-filter-button');
+                if (filterButton) {
+                    filterButton.innerHTML = `<i class="fas fa-calendar-alt mr-2"></i> <span>${filterText}</span>`;
+                    filterButton.classList.add('btn-active');
+                }
+                
+                // Force close the dropdown (DaisyUI specific)
+                document.activeElement.blur();
+            });
+        });
+    });
+    
+    // Format number with commas
+    function formatNumber(input) {
+        // Save cursor position
+        const cursorPos = input.selectionStart;
+        const oldLength = input.value.length;
+        
+        // Remove non-numeric characters
+        let value = input.value.replace(/\D/g, '');
+        
+        // Format with commas
+        if (value) {
+            value = parseInt(value, 10).toLocaleString('en-US');
+        }
+        
+        input.value = value;
+        
+        // Restore cursor approximate position
+        const newLength = input.value.length;
+        const newCursorPos = cursorPos + (newLength - oldLength);
+        if (newCursorPos >= 0) {
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }
+    }
+    
+    // Parse formatted number back to integer
+    function parseFormattedNumber(formattedNumber) {
+        return parseInt(formattedNumber.replace(/,/g, ''), 10) || 0;
+    }
+    
+    // Update formatted amount display
+    function updateFormattedAmount() {
+        const summaInput = document.getElementById('summasi');
+        const formattedAmount = document.getElementById('formatted-amount');
+        if (summaInput && formattedAmount) {
+            const value = parseFormattedNumber(summaInput.value);
+            formattedAmount.textContent = value.toLocaleString('en-US');
+        }
+    }
+    
+    // Calculate total amount
+    function calculateTotal() {
+        const rows = document.querySelectorAll('#rasxod-table-body tr:not([style*="display: none"])');
+        let total = 0;
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            // Skip the empty message row
+            if (!row.querySelector('td[colspan]')) {
+                const amountCell = row.querySelector('td:nth-child(4)').textContent;
+                const amount = parseFormattedNumber(amountCell);
+                total += amount;
+                visibleCount++;
+            }
+        });
+        
+        const totalElement = document.getElementById('total-amount');
+        if (totalElement) {
+            totalElement.textContent = total.toLocaleString('en-US');
+        }
+        
+        const visibleCountElement = document.getElementById('visible-count');
+        if (visibleCountElement) {
+            visibleCountElement.textContent = visibleCount;
+        }
+    }
+    
+    // Filter table by search term
+    function filterTable() {
+        const searchTerm = document.getElementById('search-input').value.toLowerCase();
+        const rows = document.querySelectorAll('#rasxod-table-body tr');
+        let hasVisibleRows = false;
+        let emptyRow = null;
+        
+        rows.forEach(row => {
+            // Find and store the empty row
+            if (row.querySelector('td[colspan]')) {
+                emptyRow = row;
+                return;
+            }
+            
+            const nameCell = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+            
+            if (nameCell.includes(searchTerm)) {
+                row.style.display = '';
+                hasVisibleRows = true;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Handle empty message row visibility
+        if (emptyRow) {
+            emptyRow.style.display = hasVisibleRows ? 'none' : '';
+        }
+        
+        calculateTotal();
+    }
+    
+    // Sort table by date or amount
+    let sortDirection = 'desc'; // Start with newest first
+    let sortField = 'date'; // Default sort by date
+    
+    function setSortField(field) {
+        const oldField = sortField;
+        sortField = field;
+        
+        // If clicking the same field, toggle direction
+        if (oldField === field) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            // For new field, start with descending (newest/largest first)
+            sortDirection = 'desc';
+        }
+        
+        sortTable(true);
+    }
+    
+    function sortTable(skipToggle) {
+        const sortToggle = document.getElementById('sort-toggle');
+        
+        if (!skipToggle) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        }
+        
+        // Update button text based on current sort field
+        let fieldText = 'Saralash';
+        if (sortField === 'date') fieldText = 'Sana';
+        if (sortField === 'amount') fieldText = 'Summa';
+        if (sortField === 'name') fieldText = 'Nomi';
+        
+        const directionText = sortDirection === 'asc' ? 'o\'sish' : 'kamayish';
+        
+        if (sortToggle) {
+            sortToggle.innerHTML = `<i class="fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} mr-2"></i> <span>${fieldText} (${directionText})</span>`;
+            sortToggle.classList.add('btn-active');
+        }
+        
+        performSort();
+    }
+    
+    // Separate function to perform sorting for reusability
+    function performSort() {
+        const tbody = document.getElementById('rasxod-table-body');
+        const rows = Array.from(tbody.querySelectorAll('tr:not([style*="display: none"]):not([colspan])'));
+        
+        // Sort by selected field
+        rows.sort((a, b) => {
+            let valueA, valueB;
+            
+            switch(sortField) {
+                case 'date':
+                    valueA = new Date(a.dataset.date || '1970-01-01').getTime();
+                    valueB = new Date(b.dataset.date || '1970-01-01').getTime();
+                    break;
+                case 'amount':
+                    valueA = parseInt(a.dataset.amount || '0', 10);
+                    valueB = parseInt(b.dataset.amount || '0', 10);
+                    break;
+                case 'name':
+                    valueA = a.dataset.name || '';
+                    valueB = b.dataset.name || '';
+                    return sortDirection === 'asc' 
+                        ? valueA.localeCompare(valueB)
+                        : valueB.localeCompare(valueA);
+                    break;
+            }
+            
+            if (sortDirection === 'asc') {
+                return valueA - valueB;
+            } else {
+                return valueB - valueA;
+            }
+        });
+        
+        // Remove all rows
+        rows.forEach(row => row.remove());
+        
+        // Append sorted rows
+        rows.forEach(row => {
+            tbody.appendChild(row);
+        });
+        
+        // Update row numbers
+        updateRowNumbers();
+    }
+    
+    // Update row numbers after sorting or filtering
+    function updateRowNumbers() {
+        const visibleRows = Array.from(document.querySelectorAll('#rasxod-table-body tr:not([style*="display: none"]):not([colspan])'));
+        visibleRows.forEach((row, index) => {
+            row.querySelector('td:first-child').textContent = index + 1;
+        });
+    }
+    
+    // Filter by date
+    function filterByDate(filter) {
+        const rows = document.querySelectorAll('#rasxod-table-body tr');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - today.getDay());
+        
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        
+        let hasVisibleRows = false;
+        let emptyRow = null;
+        
+        rows.forEach(row => {
+            // Find and store the empty row
+            if (row.querySelector('td[colspan]')) {
+                emptyRow = row;
+                return;
+            }
+            
+            const dateStr = row.dataset.date;
+            
+            if (!dateStr) {
+                row.style.display = 'none';
+                return;
+            }
+            
+            const rowDate = new Date(dateStr);
+            rowDate.setHours(0, 0, 0, 0);
+            
+            let show = false;
+            
+            switch (filter) {
+                case 'all':
+                    show = true;
+                    break;
+                case 'today':
+                    show = rowDate.getTime() === today.getTime();
+                    break;
+                case 'week':
+                    show = rowDate >= weekStart;
+                    break;
+                case 'month':
+                    show = rowDate >= monthStart;
+                    break;
+            }
+            
+            if (show) {
+                row.style.display = '';
+                hasVisibleRows = true;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Handle empty message row visibility
+        if (emptyRow) {
+            emptyRow.style.display = hasVisibleRows ? 'none' : '';
+        }
+        
+        // Update totals and row numbers
+        calculateTotal();
+        updateRowNumbers();
+    }
+    
+    // Reset all filters
+    function resetFilters() {
+        // Reset search box
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.value = '';
+        }
+        
+        // Reset date filter button
+        const dateFilterButton = document.getElementById('date-filter-button');
+        if (dateFilterButton) {
+            dateFilterButton.innerHTML = '<i class="fas fa-calendar-alt mr-2"></i> <span>Sana bo\'yicha</span>';
+            dateFilterButton.classList.remove('btn-active');
+        }
+        
+        // Reset sort button
+        const sortToggle = document.getElementById('sort-toggle');
+        if (sortToggle) {
+            sortToggle.innerHTML = '<i class="fas fa-sort mr-2"></i> <span>Saralash</span>';
+            sortToggle.classList.remove('btn-active');
+        }
+        
+        // Show all rows
+        const rows = document.querySelectorAll('#rasxod-table-body tr');
+        rows.forEach(row => {
+            if (!row.querySelector('td[colspan]')) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none'; // Hide empty message
+            }
+        });
+        
+        // Reset sort order
+        sortDirection = 'desc';
+        sortField = 'date';
+        
+        // Update totals
+        calculateTotal();
+        updateRowNumbers();
+        
+        // Apply a subtle animation to show the reset was successful
+        const tableBody = document.getElementById('rasxod-table-body');
+        if (tableBody) {
+            tableBody.classList.add('animate-pulse');
+            setTimeout(() => {
+                tableBody.classList.remove('animate-pulse');
+            }, 500);
+        }
+    }
+    
+    // Reset form fields
+    function resetForm() {
+        const form = document.getElementById('rasxod-form');
+        if (form) {
+            // Clear non-date fields
+            document.getElementById('rasxod_nomi').value = '';
+            document.getElementById('summasi').value = '';
+            
+            // Reset date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('sana').value = today;
+            
+            // Update formatted amount
+            updateFormattedAmount();
+            
+            // Focus on first field
+            document.getElementById('rasxod_nomi').focus();
+        }
+    }
+    
+    function confirmDelete(id, name) {
+        document.getElementById('delete-name').textContent = name;
+        document.getElementById('confirm-delete-btn').href = "{% url 'rasxod_delete' 0 %}".replace('0', id);
+        document.getElementById('delete-modal').classList.add('modal-open');
+    }
+    
+    function closeModal() {
+        document.getElementById('delete-modal').classList.remove('modal-open');
+    }
+</script>
+{% endblock %}

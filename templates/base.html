@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ID GPS</title>
+    <!-- Set initial theme before page load to prevent flash -->
+    <script>
+        // Check for dark mode preference in localStorage
+        if(localStorage.getItem('darkMode') === 'true') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.5.0/dist/full.css" rel="stylesheet" type="text/css" />
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'sidebar': '0 0 25px rgba(0, 0, 0, 0.15)',
+                        'card': '0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.1)',
+                        '3d': '0 10px 20px rgba(0, 0, 0, 0.15), 0 3px 6px rgba(0, 0, 0, 0.1)',
+                        '3d-hover': '0 15px 30px rgba(0, 0, 0, 0.2), 0 5px 10px rgba(0, 0, 0, 0.15)',
+                        'elevated': '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                        'fade-out': 'fadeOut 0.3s ease-in-out',
+                        'slide-in': 'slideIn 0.3s ease-in-out',
+                        'slide-out': 'slideOut 0.3s ease-in-out',
+                        'bounce-slow': 'bounce 3s infinite',
+                        'pulse-slow': 'pulse 3s infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        fadeOut: {
+                            '0%': { opacity: '1' },
+                            '100%': { opacity: '0' },
+                        },
+                        slideIn: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(0)' },
+                        },
+                        slideOut: {
+                            '0%': { transform: 'translateX(0)' },
+                            '100%': { transform: 'translateX(-100%)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        },
+                    },
+                }
+            },
+            plugins: [require("daisyui")],
+            daisyui: {
+                themes: ["light", "dark"],
+            },
+        }
+    </script>
+    <style>
+        [x-cloak] { display: none !important; }
+        .sidebar-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            will-change: transform, width;
+        }
+        .sidebar-expanded {
+            width: 240px !important; /* Fixed pixel width, important to override other styles */
+            min-width: 240px !important;
+            max-width: 240px !important;
+            transform: translateZ(0);
+        }
+        .sidebar-collapsed {
+            width: 80px !important; /* Fixed pixel width, important to override other styles */
+            min-width: 80px !important;
+            max-width: 80px !important;
+            transform: translateZ(0);
+        }
+        .content-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .content-expanded {
+            margin-left: 250px !important; /* Slightly increased to match sidebar width exactly */
+            padding-left: 0 !important; /* Remove any padding to maximize content width */
+            width: calc(100% - 250px) !important; /* Make sure content takes up all available space */
+        }
+        .content-collapsed {
+            margin-left: 90px !important; /* Slightly increased for better spacing */
+            padding-left: 0 !important;
+            width: calc(100% - 90px) !important; /* Make sure content takes up all available space */
+        }
+        @media (max-width: 768px) {
+            .sidebar-expanded {
+                width: 240px !important;
+                min-width: 240px !important;
+                max-width: 240px !important;
+                transform: translateX(0);
+                z-index: 40;
+            }
+            .sidebar-collapsed {
+                width: 0 !important;
+                min-width: 0 !important;
+                max-width: 0 !important;
+                transform: translateX(-100%);
+                z-index: 40;
+            }
+            .content-expanded, .content-collapsed {
+                margin-left: 0 !important;
+                width: 100% !important;
+                padding-left: 0 !important;
+            }
+            .mobile-sidebar-overlay {
+                display: block;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 30;
+            }
+        }
+        .nav-item {
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+            backface-visibility: hidden;
+        }
+        .nav-item:hover {
+            transform: translateY(-2px) translateZ(10px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #3b82f6;
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.3s ease;
+        }
+        .nav-item:hover::after {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+        .nav-item.active::after {
+            transform: scaleX(1);
+        }
+        .toast {
+            animation: fadeIn 0.3s, fadeOut 0.3s 2.7s;
+            animation-fill-mode: forwards;
+            transform-style: preserve-3d;
+            transform: translateZ(20px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px) translateZ(0); }
+            to { opacity: 1; transform: translateY(0) translateZ(20px); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0) translateZ(20px); }
+            to { opacity: 0; transform: translateY(-10px) translateZ(0); }
+        }
+        .card-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            backface-visibility: hidden;
+        }
+        .card-3d:hover {
+            transform: translateY(-5px) translateZ(10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2), 0 5px 10px rgba(0, 0, 0, 0.15);
+        }
+        .btn-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            backface-visibility: hidden;
+        }
+        .btn-3d:hover {
+            transform: translateY(-2px) translateZ(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .btn-3d:active {
+            transform: translateY(1px) translateZ(0);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-3d {
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            backface-visibility: hidden;
+        }
+        .sidebar-header-3d {
+            transform: translateZ(20px);
+        }
+        .sidebar-nav-3d {
+            transform: translateZ(10px);
+        }
+        .sidebar-footer-3d {
+            transform: translateZ(15px);
+        }
+        .nav-icon-3d {
+            transition: transform 0.3s ease;
+        }
+        .nav-item:hover .nav-icon-3d {
+            transform: scale(1.2) translateZ(5px);
+        }
+        /* Fix for sidebar visibility */
+        .md\:static {
+            position: static !important;
+        }
+        .md\:inset-0 {
+            top: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            left: 0 !important;
+        }
+        
+        /* Select2 Custom Styling */
+        .select2-container {
+            width: 100% !important;
+        }
+        .select2-container--bootstrap-5 .select2-selection {
+            min-height: 38px;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            background-color: white;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        .select2-container--bootstrap-5 .select2-selection--single {
+            padding: 0.375rem 0.75rem;
+            display: flex;
+            align-items: center;
+        }
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+            color: #1f2937;
+            line-height: 1.25;
+            padding: 0;
+            margin: 0;
+            font-size: 0.875rem;
+        }
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow {
+            height: 36px;
+            width: 24px;
+            right: 3px;
+        }
+        .select2-container--bootstrap-5 .select2-dropdown {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-top: 2px;
+        }
+        .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        .select2-container--bootstrap-5 .select2-results__option {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        .select2-container--bootstrap-5 .select2-results__option--highlighted[aria-selected] {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .select2-container--bootstrap-5 .select2-results__option[aria-selected=true] {
+            background-color: #e0f2fe;
+            color: #1f2937;
+        }
+        .dark .select2-container--bootstrap-5 .select2-selection {
+            background-color: #1f2937;
+            border-color: #374151;
+        }
+        .dark .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+            color: #f3f4f6;
+        }
+        .dark .select2-container--bootstrap-5 .select2-dropdown {
+            background-color: #1f2937;
+            border-color: #374151;
+        }
+        .dark .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
+            background-color: #374151;
+            border-color: #4b5563;
+            color: #f3f4f6;
+        }
+        .dark .select2-container--bootstrap-5 .select2-results__option {
+            color: #f3f4f6;
+        }
+        .dark .select2-container--bootstrap-5 .select2-results__option[aria-selected=true] {
+            background-color: #374151;
+            color: #f3f4f6;
+        }
+        /* Add custom styles for the input group with Select2 */
+        .input-group .select2-container--bootstrap-5 .select2-selection {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            height: 100%;
+        }
+
+        /* Add more space to the main content container */
+        .container {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+
+        /* Adjust the main content padding */
+        main {
+            padding: 1rem !important;
+        }
+    </style>
+</head>
+<body class="bg-base-100 font-sans">
+    <!-- Toast container - Moved outside main app container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
+    </div>
+
+    <div x-data="{ 
+        sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true' ? true : false,
+        darkMode: localStorage.getItem('darkMode') === 'true',
+        toggleCollapse() {
+            this.sidebarCollapsed = !this.sidebarCollapsed;
+            localStorage.setItem('sidebarCollapsed', this.sidebarCollapsed);
+        },
+        toggleDarkMode() {
+            this.darkMode = !this.darkMode;
+            localStorage.setItem('darkMode', this.darkMode);
+            document.documentElement.setAttribute('data-theme', this.darkMode ? 'dark' : 'light');
+        }
+    }" 
+    x-init="
+        if (localStorage.getItem('darkMode') === 'true') {
+            darkMode = true;
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            darkMode = false;
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+        
+        // Initialize sidebar state from localStorage or default to expanded on desktop, collapsed on mobile
+        if (localStorage.getItem('sidebarCollapsed') === null) {
+            sidebarCollapsed = window.innerWidth < 768;
+            localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+        }
+        
+        // Force redraw of sidebar to ensure correct width
+        setTimeout(() => {
+            const sidebar = document.querySelector('aside');
+            if (sidebar) {
+                sidebar.style.display = 'none';
+                setTimeout(() => {
+                    sidebar.style.display = '';
+                }, 5);
+            }
+        }, 50);
+    "
+    class="min-h-screen flex bg-base-100 transition-colors duration-200">
+        <!-- Mobile sidebar overlay -->
+        <div 
+            x-show="!sidebarCollapsed && window.innerWidth < 768" 
+            @click="sidebarCollapsed = true" 
+            class="mobile-sidebar-overlay"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-300"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            x-cloak
+        ></div>
+
+  <!-- Sidebar -->
+        <aside 
+            :class="{
+                'sidebar-expanded': !sidebarCollapsed, 
+                'sidebar-collapsed': sidebarCollapsed,
+                'sidebar-transition': true,
+                'sidebar-3d': true
+            }"
+            class="fixed inset-y-0 left-0 z-30 bg-gradient-to-b from-gray-900 to-gray-800 text-white shadow-sidebar md:static md:inset-0"
+        >
+            <div class="flex items-center justify-between h-16 px-4 bg-gray-800 border-b border-gray-700 sidebar-header-3d">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold tracking-tight" x-show="!sidebarCollapsed">ID GPS</span>
+                    <span class="text-xl font-bold tracking-tight" x-show="sidebarCollapsed" x-cloak>ID</span>
+                </div>
+                <div class="flex items-center">
+                    <button @click="toggleCollapse()" class="text-gray-300 hover:text-white focus:outline-none transition-colors duration-200 btn-3d">
+                        <i class="fas" :class="sidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <nav class="mt-5 px-2 space-y-1 sidebar-nav-3d">
+                <a href="{% url 'statistika' %}" class="nav-item group flex items-center px-2 py-2.5 text-sm font-medium rounded-md {% if 'statistika' in request.path %}bg-gray-800 text-white active{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %}">
+                    <i class="fas fa-chart-bar mr-3 w-5 text-center nav-icon-3d"></i>
+                    <span x-show="!sidebarCollapsed" class="transition-opacity duration-200">STATISTIKA</span>
+                </a>
+                
+                <a href="{% url 'mijozlar' %}" class="nav-item group flex items-center px-2 py-2.5 text-sm font-medium rounded-md {% if 'mijozlar' in request.path %}bg-gray-800 text-white active{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %}">
+                    <i class="fas fa-users mr-3 w-5 text-center nav-icon-3d"></i>
+                    <span x-show="!sidebarCollapsed" class="transition-opacity duration-200">MIJOZLAR</span>
+                </a>
+                
+                <a href="{% url 'sklad-list' %}" class="nav-item group flex items-center px-2 py-2.5 text-sm font-medium rounded-md {% if 'sklad' in request.path %}bg-gray-800 text-white active{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %}">
+                    <i class="fas fa-warehouse mr-3 w-5 text-center nav-icon-3d"></i>
+                    <span x-show="!sidebarCollapsed" class="transition-opacity duration-200">SKLAD</span>
+                </a>
+                
+                <a href="{% url 'note-list' %}" class="nav-item group flex items-center px-2 py-2.5 text-sm font-medium rounded-md {% if 'note' in request.path %}bg-gray-800 text-white active{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %}">
+                    <i class="fas fa-sticky-note mr-3 w-5 text-center nav-icon-3d"></i>
+                    <span x-show="!sidebarCollapsed" class="transition-opacity duration-200">ESLATMALAR</span>
+                </a>
+                
+                <a href="{% url 'rasxod_list' %}" class="nav-item group flex items-center px-2 py-2.5 text-sm font-medium rounded-md {% if 'rasxod' in request.path %}bg-gray-800 text-white active{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %}">
+                    <i class="fas fa-money-bill-wave mr-3 w-5 text-center nav-icon-3d"></i>
+                    <span x-show="!sidebarCollapsed" class="transition-opacity duration-200">RASXOD</span>
+                </a>
+                
+                <a href="{% url 'sotish_list' %}" class="nav-item group flex items-center px-2 py-2.5 text-sm font-medium rounded-md {% if 'sotuv' in request.path %}bg-gray-800 text-white active{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %}">
+                    <i class="fas fa-shopping-cart mr-3 w-5 text-center nav-icon-3d"></i>
+                    <span x-show="!sidebarCollapsed" class="transition-opacity duration-200">SOTUV</span>
+                </a>
+                
+                <a href="{% url 'bugalteriya' %}" class="nav-item group flex items-center px-2 py-2.5 text-sm font-medium rounded-md {% if 'bugalteriya' in request.path %}bg-gray-800 text-white active{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %}">
+                    <i class="fas fa-calculator mr-3 w-5 text-center nav-icon-3d"></i>
+                    <span x-show="!sidebarCollapsed" class="transition-opacity duration-200">BUGALTERIYA</span>
+                </a>
+                
+      {% if request.user.is_staff %}
+                <a href="{% url 'hodim-list' %}" class="nav-item group flex items-center px-2 py-2.5 text-sm font-medium rounded-md {% if 'hodim' in request.path %}bg-gray-800 text-white active{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %}">
+                    <i class="fas fa-user-tie mr-3 w-5 text-center nav-icon-3d"></i>
+                    <span x-show="!sidebarCollapsed" class="transition-opacity duration-200">HODIM</span>
+                </a>
+      {% endif %}
+            </nav>
+            
+            <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700 sidebar-footer-3d">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <img class="h-8 w-8 rounded-full ring-2 ring-blue-500" src="https://ui-avatars.com/api/?name={{request.user.username}}&background=0D8ABC&color=fff" alt="{{request.user.username}}">
+                    </div>
+                    <div class="ml-3" x-show="!sidebarCollapsed">
+                        <p class="text-sm font-medium text-white">{{request.user.username}}</p>
+                        <a href="{% url 'logout' %}" class="text-xs text-gray-300 hover:text-white transition-colors duration-200">Chiqish</a>
+                    </div>
+    </div>
+  </div>
+        </aside>
+        
+        <!-- Main content -->
+        <div class="flex-1 flex flex-col overflow-x-hidden" :class="{'content-expanded': !sidebarCollapsed, 'content-collapsed': sidebarCollapsed, 'content-transition': true}">
+            <!-- Mobile menu and dark mode toggle -->
+            <div class="md:p-2 p-2 flex items-center justify-between bg-base-100 shadow-sm">
+                <div class="flex items-center">
+                    <button @click="toggleCollapse()" class="btn btn-square btn-ghost md:hidden">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <span class="ml-2 text-lg font-semibold md:hidden">ID GPS</span>
+                </div>
+                <button @click="toggleDarkMode()" class="btn btn-circle btn-ghost">
+                    <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
+                </button>
+            </div>
+
+            {% if messages %}
+            <div id="message-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none">
+                {% for message in messages %}
+                <div class="message-alert opacity-0 transform translate-x-full transition-all duration-500 ease-out pointer-events-auto
+                    w-80 sm:w-96 
+                    {% if message.tags == 'success' %}bg-success/90
+                    {% elif message.tags == 'error' %}bg-error/90
+                    {% elif message.tags == 'warning' %}bg-warning/90
+                    {% else %}bg-info/90{% endif %}
+                    rounded-lg shadow-lg backdrop-blur-sm
+                    hover:shadow-xl hover:scale-102 active:scale-98">
+
+                    <div class="relative overflow-hidden p-4">
+                        <!-- Progress bar -->
+                        <div class="absolute bottom-0 left-0 h-1 w-full bg-white/20">
+                            <div class="progress-bar h-full bg-white/40 transform origin-left scale-x-0 transition-transform"></div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <!-- Icon -->
+                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                {% if message.tags == 'success' %}
+                                    <i class="fas fa-check text-lg text-white"></i>
+                                {% elif message.tags == 'error' %}
+                                    <i class="fas fa-times text-lg text-white"></i>
+                                {% elif message.tags == 'warning' %}
+                                    <i class="fas fa-exclamation text-lg text-white"></i>
+                                {% else %}
+                                    <i class="fas fa-info text-lg text-white"></i>
+                                {% endif %}
+                            </div>
+
+                            <!-- Content -->
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-white font-medium mb-1">
+                                    {% if message.tags == 'success' %}Muvaffaqiyatli!
+                                    {% elif message.tags == 'error' %}Xatolik!
+                                    {% elif message.tags == 'warning' %}Ogohlantirish!
+                                    {% else %}Ma'lumot{% endif %}
+                                </h4>
+                                <p class="text-white/90 text-sm line-clamp-2">{{ message }}</p>
+                            </div>
+
+                            <!-- Close button -->
+                            <button onclick="dismissMessage(this.closest('.message-alert'))" 
+                                    class="flex-shrink-0 text-white/80 hover:text-white focus:outline-none
+                                    transition-transform duration-200 hover:rotate-90">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const messages = document.querySelectorAll('.message-alert');
+                    const DISPLAY_DURATION = 5000; // 5 seconds
+                    const ANIMATION_DELAY = 100;
+
+                    messages.forEach((message, index) => {
+                        // Show message with delay
+                        setTimeout(() => {
+                            message.classList.remove('opacity-0', 'translate-x-full');
+                            
+                            // Start progress bar animation
+                            const progressBar = message.querySelector('.progress-bar');
+                            progressBar.style.transition = `transform ${DISPLAY_DURATION}ms linear`;
+                            requestAnimationFrame(() => {
+                                progressBar.style.transform = 'scaleX(1)';
+                            });
+
+                            // Auto dismiss
+                            setTimeout(() => {
+                                dismissMessage(message);
+                            }, DISPLAY_DURATION);
+                        }, index * ANIMATION_DELAY);
+                    });
+                });
+
+                function dismissMessage(message) {
+                    if (!message) return;
+
+                    message.classList.add('opacity-0', 'translate-x-full');
+                    setTimeout(() => {
+                        message.remove();
+                    }, 500);
+                }
+            </script>
+
+            <style>
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+
+                .scale-102 {
+                    transform: scale(1.02);
+                }
+
+                .scale-98 {
+                    transform: scale(0.98);
+                }
+
+                .message-alert {
+                    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+            </style>
+            {% endif %}
+            
+            <!-- Page content -->
+            <main class="flex-1 p-2">
+      {% block content %}
+      {% endblock %}
+    </main>
+        </div>
+  </div>
+    
+    <!-- Alpine.js -->
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- jQuery (required for Select2) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+  <script>
+        // Global Select2 initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize all select elements with the gps-select class
+            $('.gps-select').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'GPS tanlang',
+                allowClear: true,
+                language: {
+                    noResults: function() {
+                        return "Natija topilmadi";
+                    },
+                    searching: function() {
+                        return "Qidirilmoqda...";
+                    }
+                }
+            });
+        });
+  </script>
+
+    <style>
+        /* Toast animations */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        #toast-container .alert {
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-radius: 0.5rem;
+        }
+    </style>
+
+    <!-- Add this script at the end of the file, just before the closing body tag -->
+    <script>
+        // Additional script to ensure sidebar state consistency across page loads
+        window.addEventListener('load', function() {
+            // Force the sidebar to match localStorage state
+            const sidebarState = localStorage.getItem('sidebarCollapsed');
+            if (sidebarState) {
+                const sidebar = document.querySelector('aside');
+                
+                if (sidebar) {
+                    if (sidebarState === 'true') {
+                        sidebar.classList.remove('sidebar-expanded');
+                        sidebar.classList.add('sidebar-collapsed');
+                        
+                        const mainContent = document.querySelector('.flex-1');
+                        if (mainContent) {
+                            mainContent.classList.remove('content-expanded');
+                            mainContent.classList.add('content-collapsed');
+                        }
+                    } else {
+                        sidebar.classList.remove('sidebar-collapsed');
+                        sidebar.classList.add('sidebar-expanded');
+                        
+                        const mainContent = document.querySelector('.flex-1');
+                        if (mainContent) {
+                            mainContent.classList.remove('content-collapsed');
+                            mainContent.classList.add('content-expanded');
+                        }
+                    }
+                }
+            }
+        });
+  </script>
+</body>
+</html>

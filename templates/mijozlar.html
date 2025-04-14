@@ -1,0 +1,374 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container mx-auto px-2">
+    <div class="mt-4 mb-4">
+        <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+            <i class="fas fa-users text-primary"></i>
+            <span class="animate-float">Mijozlar ro'yxati</span>
+        </h1>
+    </div>
+
+    <div class="card bg-base-100 shadow-lg">
+        <div class="card-body p-3">
+            <!-- Search and Filter Controls -->
+            <div class="flex flex-col md:flex-row justify-between items-center gap-3 mb-3">
+                <h2 class="card-title text-xl font-semibold text-base-content">
+                    <i class="fas fa-list text-primary mr-2"></i>
+                    Mijozlar ro'yxati
+                </h2>
+                
+                <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="Qidirish..." 
+                               class="input input-bordered w-full pr-10 focus:outline-primary">
+                        <i class="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50"></i>
+                    </div>
+                    <div class="dropdown dropdown-end">
+                        <label tabindex="0" class="btn btn-outline gap-2">
+                            <i class="fas fa-filter"></i>
+                            <span class="uppercase">FILTER</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </label>
+                        <ul tabindex="0" class="dropdown-content z-[100] menu p-2 shadow bg-base-100 rounded-box w-52 mt-1">
+                            <li><a onclick="filterTable('Barchasi')" class="flex items-center justify-between">
+                                <span>Barchasi</span>
+                                <span class="badge badge-sm">{{ unique_mijoz_count }}</span>
+                            </a></li>
+                            <li><a onclick="filterTable('Qarzdorlar')" class="flex items-center justify-between">
+                                <span>Qarzdorlar</span>
+                                <span id="debtorCount" class="badge badge-error badge-sm">0</span>
+                            </a></li>
+                            <li><a onclick="filterTable('Qarzsizlar')" class="flex items-center justify-between">
+                                <span>Qarzsizlar</span>
+                                <span class="badge badge-success badge-sm">{{ unique_mijoz_count }}</span>
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mobile View - Cards -->
+            <div class="md:hidden">
+                {% for item in mijozlar_data %}
+                    {% if item.first_row %}
+                    <div class="card bg-base-100 border border-base-300 mb-4 hover:shadow-lg transition-shadow duration-300" data-mijoz="{{ item.mijoz }}" data-qarz="{{ item.karta }}">
+                        <div class="card-body p-4 gap-2">
+                            <div class="flex justify-between">
+                                <h2 class="card-title text-lg">{{ item.mijoz }}</h2>
+                                <span class="badge badge-primary">{{ item.rowspan }} GPS</span>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-2 text-sm mt-2">
+                                <div class="space-y-1">
+                                    <p class="font-semibold text-base-content/80">Tel raqam:</p>
+                                    <p>{{ item.tel_raqam }}</p>
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="font-semibold text-base-content/80">Sana:</p>
+                                    <p>{{ item.sana }}</p>
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="font-semibold text-base-content/80">Login:</p>
+                                    <p>{{ item.username }}</p>
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="font-semibold text-base-content/80">Parol:</p>
+                                    <p>{{ item.password }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="divider my-2">To'lov ma'lumotlari</div>
+                            
+                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                <div class="space-y-1">
+                                    <p class="font-semibold text-base-content/80">Umumiy summa:</p>
+                                    <p class="font-medium">{{ item.summasi|intcomma }}</p>
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="font-semibold text-base-content/80">Naqd:</p>
+                                    <p>{{ item.naqd|intcomma }}</p>
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="font-semibold text-base-content/80">Bank:</p>
+                                    <p>{{ item.bank_schot|intcomma }}</p>
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="font-semibold text-base-content/80">Qarz:</p>
+                                    <p class="{% if item.karta > 0 %}text-error{% else %}text-success{% endif %}">
+                                        {{ item.karta|intcomma }}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div class="divider my-2">GPS qurilmalari</div>
+                            
+                            <div class="space-y-3">
+                                {% for gps_item in mijozlar_data %}
+                                    {% if gps_item.id == item.id %}
+                                    <div class="bg-base-200 p-3 rounded-lg">
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="font-medium">GPS: {{ gps_item.gps }}</span>
+                                            <span class="text-xs badge badge-ghost">{{ gps_item.davlat_raqami }}</span>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-2 text-xs">
+                                            <div>
+                                                <span class="text-base-content/70">SIM karta:</span>
+                                                <span class="ml-1">{{ gps_item.sim_karta }}</span>
+                                            </div>
+                                            <div>
+                                                <span class="text-base-content/70">Mashina:</span>
+                                                <span class="ml-1">{{ gps_item.mashina_turi }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="card-actions justify-end mt-3">
+                                <button class="btn btn-sm btn-outline btn-primary gap-1">
+                                    <i class="fas fa-edit"></i> Tahrirlash
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            
+            <!-- Desktop View - Table -->
+            <div class="hidden md:block overflow-x-auto" data-total-mijozlar="{{ unique_mijoz_count }}">
+                <div class="mb-3 flex justify-between items-center">
+                    <div class="text-sm font-medium">
+                        <span id="tableHeaderCount">{{ unique_mijoz_count }}</span> ta mijoz
+                    </div>
+                </div>
+                <table class="table table-zebra table-compact table-pin-rows text-xs w-full" data-total-customers="{{ mijozlar_list|length }}">
+            <thead>
+                        <tr class="bg-base-200">
+                            <th class="sticky left-0 bg-base-200 z-10">Mijoz</th>
+                            <th>Tel raqam</th>
+                            <th>Login</th>
+                            <th>Parol</th>
+                            <th>Dasturiy ta'minot</th>
+                            <th>GPS ID</th>
+                            <th>SIM karta</th>
+                            <th>Mashina turi</th>
+                            <th>Davlat raqami</th>
+                            <th>Abonent to'lov</th>
+                            <th>Sana</th>
+                            <th>Umumiy summa</th>
+                            <th>Naqd</th>
+                            <th>Bank</th>
+                            <th>Qarz</th>
+                            <th>Master</th>
+                            <th>Master summasi</th>
+                            <th>Jami summa</th>
+                </tr>
+            </thead>
+            <tbody>
+                        {% for item in page_obj %}
+                            <tr class="hover data-row" data-mijoz="{{ item.mijoz }}" data-qarz="{{ item.karta }}">
+                        {% if item.first_row %}
+                                    <td class="sticky left-0 bg-base-100 font-medium text-xs p-1 mijozlar" rowspan="{{ item.rowspan }}">{{ item.mijoz }}</td>
+                                    <td class="text-xs p-1" rowspan="{{ item.rowspan }}">{{ item.tel_raqam }}</td>
+                                    <td class="text-xs p-1" rowspan="{{ item.rowspan }}">{{ item.username }}</td>
+                                    <td class="text-xs p-1" rowspan="{{ item.rowspan }}">{{ item.password }}</td>
+                                    <td class="text-xs p-1" rowspan="{{ item.rowspan }}">{{ item.dasturiy_taminot_nomi }}</td>
+                        {% endif %}
+                                <td class="text-xs p-1">{{ item.gps }}</td>
+                                <td class="text-xs p-1">{{ item.sim_karta }}</td>
+                                <td class="text-xs p-1">{{ item.mashina_turi }}</td>
+                                <td class="text-xs p-1">{{ item.davlat_raqami }}</td>
+                        {% if item.first_row %}
+                                    <td class="text-xs p-1" rowspan="{{ item.rowspan }}">{{ item.abonent_tulov|intcomma }}</td>
+                                    <td class="text-xs p-1" rowspan="{{ item.rowspan }}">{{ item.sana }}</td>
+                                    <td class="text-xs p-1" rowspan="{{ item.rowspan }}">{{ item.summasi|intcomma }}</td>
+                                    <td class="text-xs p-1" rowspan="{{ item.rowspan }}">{{ item.naqd|intcomma }}</td>
+                                    <td class="text-xs p-1" rowspan="{{ item.rowspan }}">{{ item.bank_schot|intcomma }}</td>
+                                    <td class="text-xs p-1 {% if item.karta > 0 %}text-error font-medium{% else %}text-success{% endif %}" rowspan="{{ item.rowspan }}">
+                                        {{ item.karta|intcomma }}
+                                    </td>
+                                    <td class="text-xs p-1" rowspan="{{ item.rowspan }}">{{ item.master }}</td>
+                                    <td class="text-xs p-1" rowspan="{{ item.rowspan }}">{{ item.master_summasi|intcomma }}</td>
+                                    <td class="text-xs p-1 font-medium" rowspan="{{ item.rowspan }}">{{ item.jami_summa|intcomma }}</td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="flex justify-between items-center pt-3 mt-3 border-t">
+                <div class="text-sm text-base-content/70">
+                    Jami: <span id="itemCount" class="font-medium">{{ unique_mijoz_count }}</span> ta mijoz
+                </div>
+                <div class="join">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1" class="join-item btn btn-sm btn-ghost">«</a>
+                        <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn btn-sm btn-ghost">‹</a>
+                    {% else %}
+                        <button class="join-item btn btn-sm btn-ghost btn-disabled">«</button>
+                        <button class="join-item btn btn-sm btn-ghost btn-disabled">‹</button>
+                    {% endif %}
+                    
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if i == page_obj.number %}
+                            <button class="join-item btn btn-sm btn-ghost btn-active">{{ i }}</button>
+                        {% elif i > page_obj.number|add:"-3" and i < page_obj.number|add:"3" %}
+                            <a href="?page={{ i }}" class="join-item btn btn-sm btn-ghost">{{ i }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" class="join-item btn btn-sm btn-ghost">›</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}" class="join-item btn btn-sm btn-ghost">»</a>
+                    {% else %}
+                        <button class="join-item btn btn-sm btn-ghost btn-disabled">›</button>
+                        <button class="join-item btn btn-sm btn-ghost btn-disabled">»</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initial counts
+        filterTable();
+        countDebtors();
+        
+        // Setup event listeners
+        const statusFilter = document.getElementById('statusFilter');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', function() {
+                filterTable(this.value);
+            });
+        }
+        
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function() {
+                filterTableBySearch(this.value.toLowerCase());
+            });
+        }
+        
+        // Initialize dropdown filter links
+        const filterLinks = document.querySelectorAll('[onclick^="filterTable"]');
+        filterLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const match = this.getAttribute('onclick').match(/filterTable\(['"]([^'"]+)['"]\)/);
+                if (match && match[1]) {
+                    // Update select element to match
+                    if (statusFilter) {
+                        statusFilter.value = match[1];
+                    }
+                    filterTable(match[1]);
+                }
+            });
+        });
+    });
+    
+    function filterTableBySearch(searchTerm) {
+        filterTable(document.getElementById('statusFilter')?.value || 'Barchasi', searchTerm);
+    }
+    
+    function filterTable(status = 'Barchasi', searchTerm = '') {
+        if (!status) {
+            status = document.getElementById('statusFilter')?.value || 'Barchasi';
+        }
+        
+        if (!searchTerm && document.getElementById('searchInput')) {
+            searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        }
+        
+        // Get all data rows
+        const rows = document.querySelectorAll('.data-row');
+        
+        rows.forEach(row => {
+            let shouldShow = true;
+            let kartaValue = parseInt(row.getAttribute('data-qarz')) || 0;
+            
+            // Apply status filter
+            if (status === 'Qarzdorlar') {
+                shouldShow = kartaValue > 0;
+            } else if (status === 'Qarzsizlar') {
+                shouldShow = kartaValue <= 0;
+            }
+            
+            // Apply search filter
+            if (shouldShow && searchTerm) {
+                shouldShow = row.textContent.toLowerCase().includes(searchTerm);
+            }
+            
+            // Show or hide the row
+            row.style.display = shouldShow ? '' : 'none';
+        });
+        
+        // Count unique visible customers
+        countVisibleCustomers();
+        
+        // Count debtors
+        countDebtors();
+    }
+    
+    function countVisibleCustomers() {
+        const uniqueCustomers = new Set();
+        
+        // Get all visible rows with mijozlar cells
+        document.querySelectorAll('.mijozlar').forEach(cell => {
+            const row = cell.closest('tr');
+            if (row && row.style.display !== 'none') {
+                uniqueCustomers.add(cell.textContent.trim());
+            }
+        });
+        
+        // Update the customer counts
+        const visibleCount = uniqueCustomers.size;
+        
+        // Update all itemCount elements
+        document.querySelectorAll('#itemCount').forEach(el => {
+            el.textContent = visibleCount;
+        });
+        
+        // Update tableHeaderCount if it exists
+        if (document.getElementById('tableHeaderCount')) {
+            document.getElementById('tableHeaderCount').textContent = visibleCount;
+        }
+    }
+    
+    function countDebtors() {
+        const uniqueDebtors = new Set();
+        
+        // Get all rows 
+        document.querySelectorAll('.data-row').forEach(row => {
+            // Skip hidden rows
+            if (row.style.display === 'none') {
+                return;
+            }
+            
+            // Get the debt value from data attribute
+            const kartaValue = parseInt(row.getAttribute('data-qarz')) || 0;
+            
+            // Find mijozlar cell in this row for customer name
+            const mijozCell = row.querySelector('.mijozlar');
+            
+            // Add to debtors set if debt > 0
+            if (kartaValue > 0 && mijozCell) {
+                uniqueDebtors.add(mijozCell.textContent.trim());
+            }
+        });
+        
+        // Update all debtorCount elements
+        const debtorCount = uniqueDebtors.size;
+        document.querySelectorAll('#debtorCount').forEach(el => {
+            el.textContent = debtorCount;
+        });
+    }
+</script>
+{% endblock %}

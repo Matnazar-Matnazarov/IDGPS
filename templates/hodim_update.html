@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+            <i class="fas fa-user-edit text-primary"></i>
+            <span class="animate-float">Hodimni tahrirlash</span>
+        </h1>
+    </div>
+
+    <div class="card bg-base-100 shadow-lg">
+        <div class="card-body p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="card-title text-xl font-semibold text-base-content">
+                    <i class="fas fa-edit text-primary mr-2"></i>
+                    Hodim ma'lumotlarini tahrirlash
+                </h2>
+                <a href="{% url 'hodim-list' %}" class="btn btn-outline btn-primary gap-2">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Orqaga</span>
+                </a>
+            </div>
+            
+            <form method="post" class="max-w-xl mx-auto">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    {% for field in form %}
+                    <div class="form-control w-full">
+                        <label class="label">
+                            <span class="label-text font-medium">{{ field.label }}</span>
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}
+                        <label class="label">
+                            <span class="label-text-alt text-info">{{ field.help_text }}</span>
+                        </label>
+                        {% endif %}
+                        {% if field.errors %}
+                        <label class="label">
+                            <span class="label-text-alt text-error">{{ field.errors|striptags }}</span>
+                        </label>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="flex justify-end mt-6">
+                    <button type="submit" class="btn btn-primary gap-2">
+                        <i class="fas fa-save"></i>
+                        <span>Saqlash</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

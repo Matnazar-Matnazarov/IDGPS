@@ -1,0 +1,7 @@
+Django
+django-admin-interface
+django-colorfield
+openpyxl
+pandas
+pillow
+PyJWT

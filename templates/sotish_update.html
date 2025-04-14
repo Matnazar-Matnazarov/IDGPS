@@ -1,0 +1,357 @@
+{% extends 'base.html'%}
+{% load static %}
+{% load humanize %}
+{% block content %}
+
+<div class="container mx-auto px-4">
+    <div class="mt-6 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+            <i class="fas fa-edit text-primary"></i>
+            <span class="animate-float">Sotish ma'lumotlarini tahrirlash</span>
+        </h1>
+        <a href="{% url 'sotish_list' %}" class="btn btn-ghost gap-2">
+            <i class="fas fa-arrow-left"></i>
+            Orqaga
+        </a>
+    </div>
+
+    <div class="mt-8">
+        <form method="POST" class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-semibold text-base-content mb-6">
+                    <i class="fas fa-edit text-primary mr-2"></i>
+                    Sotish ma'lumotlarini tahrirlash
+                </h2>
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Mijoz ma'lumotlari -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Mijoz</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-user text-gray-400"></i>
+                            </span>
+                            <input type="text" name="mijoz" id="id_mijoz" 
+                                   class="input input-bordered w-full" 
+                                   value="{{ form.instance.mijoz }}"
+                                   required>
+                        </div>
+                </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Mijoz telefon raqami</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-phone text-gray-400"></i>
+                            </span>
+                            <input type="text" name="mijoz_tel_raqam" id="id_mijoz_tel_raqam" 
+                                   class="input input-bordered w-full" 
+                                   value="{{ form.instance.mijoz_tel_raqam }}"
+                                   required>
+                        </div>
+                </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Sana</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-calendar text-gray-400"></i>
+                            </span>
+                            <input type="date" name="sana" id="id_sana" 
+                                   class="input input-bordered w-full" 
+                                   value="{{ form.instance.sana|date:'Y-m-d' }}"
+                                   required>
+                        </div>
+                </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Dasturiy ta'minot</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-laptop text-gray-400"></i>
+                            </span>
+                            {% if form.dasturiy_taminot %}
+                                {{ form.dasturiy_taminot }}
+                            {% else %}
+                                <select name="dasturiy_taminot" id="id_dasturiy_taminot" class="select select-bordered w-full" required>
+                                    <option value="">Dasturiy ta'minot tanlang</option>
+                                    {% for choice in form.fields.dasturiy_taminot.queryset %}
+                                        <option value="{{ choice.id }}" {% if choice.id == form.instance.dasturiy_taminot.id %}selected{% endif %}>
+                                            {{ choice.nom }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            {% endif %}
+                        </div>
+                </div>
+
+                <!-- Login ma'lumotlari -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Username</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-user-circle text-gray-400"></i>
+                            </span>
+                            <input type="text" name="username" id="id_username" 
+                                   class="input input-bordered w-full" 
+                                   value="{{ form.instance.username }}"
+                                   required>
+                        </div>
+                </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Parol</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-lock text-gray-400"></i>
+                            </span>
+                            <input type="text" name="password" id="id_password" 
+                                   class="input input-bordered w-full" 
+                                   value="{{ form.instance.password }}"
+                                   required>
+                        </div>
+                </div>
+
+                <!-- Master ma'lumotlari -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Master</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-user-tie text-gray-400"></i>
+                            </span>
+                            <input type="text" name="master" id="id_master" 
+                                   class="input input-bordered w-full" 
+                                   value="{{ form.instance.master }}"
+                                   required>
+                        </div>
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Master summasi</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-money-bill text-gray-400"></i>
+                            </span>
+                            <input type="text" name="master_summasi" id="id_master_summasi" 
+                                   class="input input-bordered w-full" 
+                                   value="{{ form.instance.master_summasi|intcomma }}"
+                                   onkeyup="formatNumber(this);">
+                        </div>
+                </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Bitta gps uchun abonent to'lov</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-credit-card text-gray-400"></i>
+                            </span>
+                            <input type="text" name="abonent_tulov" id="id_abonent_tulov"
+                                   class="input input-bordered w-full" 
+                                   value="{{ form.instance.abonent_tulov|default:0|intcomma }}"
+                           onkeyup="formatNumber(this);">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- To'lov ma'lumotlari -->
+                <div class="mt-8">
+                    <div class="card bg-base-200">
+                        <div class="card-body">
+                            <h3 class="card-title text-lg font-medium text-base-content mb-4">
+                                <i class="fas fa-money-check-alt text-primary mr-2"></i>
+                                To'lov ma'lumotlari
+                            </h3>
+                            
+                            <div class="form-control mb-4">
+                                <label class="label">
+                                    <span class="label-text font-medium">Gpslarning umumiy summa</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="btn btn-square btn-ghost">
+                                        <i class="fas fa-calculator text-gray-400"></i>
+                                    </span>
+                                    <input type="text" name="summasi" id="id_summasi" 
+                                           class="input input-bordered w-full" 
+                                           value="{{ form.instance.summasi|intcomma }}"
+                                           onkeyup="formatNumber(this); calculateQarz();">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text font-medium">Naqd</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="btn btn-square btn-ghost">
+                                            <i class="fas fa-money-bill-wave text-gray-400"></i>
+                                        </span>
+                                        <input type="text" name="naqd" id="id_naqd"
+                                               class="input input-bordered w-full" 
+                                               value="{{ form.instance.naqd|intcomma }}"
+                                               onkeyup="formatNumber(this); calculateQarz();">
+                                    </div>
+                                </div>
+
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text font-medium">Bank hisob</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="btn btn-square btn-ghost">
+                                            <i class="fas fa-university text-gray-400"></i>
+                                        </span>
+                                        <input type="text" name="bank_schot" id="id_bank_schot"
+                                               class="input input-bordered w-full" 
+                                               value="{{ form.instance.bank_schot|intcomma }}"
+                                               onkeyup="formatNumber(this); calculateQarz();">
+                                    </div>
+                                </div>
+
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text font-medium">Qarz</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="btn btn-square btn-ghost">
+                                            <i class="fas fa-hand-holding-usd text-gray-400"></i>
+                                        </span>
+                                        <input type="text" name="karta" id="id_karta" readonly 
+                                               class="input input-bordered w-full bg-gray-100"
+                                               value="{{ form.instance.karta|intcomma }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GPS va SIM karta -->
+                <div id="gps-container" class="mt-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium text-base-content flex items-center gap-2">
+                            <i class="fas fa-satellite text-primary"></i>
+                            GPS qurilmalar
+                        </h3>
+            </div>
+
+                    <div class="gps-fields space-y-4">
+                    {% for data in gps_data %}
+                        <div class="gps-field card bg-base-200">
+                            <div class="card-body">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <!-- GPS tanlash -->
+                                    <div class="form-control">
+                                        <label class="label">
+                                            <span class="label-text font-medium">GPS ID</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="btn btn-square btn-ghost">
+                                                <i class="fas fa-satellite text-gray-400"></i>
+                                            </span>
+                                            <select name="gps_id" class="gps-select select select-bordered w-full" required onchange="updateGpsOptions(this)">
+                                    <option value="">GPS tanlang</option>
+                                    {% for gps in mavjud_gpslar %}
+                                                    <option value="{{ gps.id }}" data-gps-id="{{ gps.gps_id }}" {% if gps.id == data.sklad.id %}selected{% endif %}>
+                                            {{ gps.gps_id }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                        </div>
+                            </div>
+
+                            <!-- SIM karta -->
+                                    <div class="form-control">
+                                        <label class="label">
+                                            <span class="label-text font-medium">SIM karta</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="btn btn-square btn-ghost">
+                                                <i class="fas fa-sim-card text-gray-400"></i>
+                                            </span>
+                                            <input type="text" name="sim_karta" class="input input-bordered w-full" 
+                                                   value="{{ data.sim_karta }}" required>
+                                        </div>
+                            </div>
+
+                            <!-- Mashina turi -->
+                                    <div class="form-control">
+                                        <label class="label">
+                                            <span class="label-text font-medium">Mashina turi</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="btn btn-square btn-ghost">
+                                                <i class="fas fa-car text-gray-400"></i>
+                                            </span>
+                                            <input type="text" name="mashina_turi" class="input input-bordered w-full" 
+                                                   value="{{ data.mashina_turi }}" required placeholder="Masalan: Cobalt">
+                                        </div>
+                            </div>
+
+                            <!-- Davlat raqami -->
+                                    <div class="form-control">
+                                        <label class="label">
+                                            <span class="label-text font-medium">Davlat raqami</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="btn btn-square btn-ghost">
+                                                <i class="fas fa-hashtag text-gray-400"></i>
+                                            </span>
+                                            <input type="text" name="davlat_raqami" class="input input-bordered w-full" 
+                                                   value="{{ data.davlat_raqami }}" required placeholder="Masalan: 01A777AA">
+                                        </div>
+                            </div>
+                        </div>
+                                <div class="card-actions justify-end mt-4">
+                                    <button type="button" onclick="removeGpsField(this)" class="btn btn-error gap-2">
+                                        <i class="fas fa-trash-alt"></i>
+                            O'chirish
+                        </button>
+                                </div>
+                            </div>
+                    </div>
+                    {% endfor %}
+                    </div>
+
+                    <div class="mt-4 flex justify-center">
+                        <button type="button" onclick="addGpsField()" 
+                                class="btn btn-success gap-2">
+                            <i class="fas fa-plus"></i>
+                            GPS qo'shish
+                        </button>
+                </div>
+            </div>
+
+                <div class="mt-8">
+                <button type="submit" 
+                            class="btn btn-primary w-full gap-2">
+                        <i class="fas fa-save"></i>
+                    Saqlash
+                </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="{% static 'js/sotish_update.js' %}"></script>
+{% endblock %}

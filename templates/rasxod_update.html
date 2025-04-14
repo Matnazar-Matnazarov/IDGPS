@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+<div class="container mx-auto px-4">
+    <div class="mt-6 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+            <div class="bg-primary/10 p-2 rounded-full">
+                <i class="fas fa-edit text-primary"></i>
+            </div>
+            <span class="animate-float">Rasxodni tahrirlash</span>
+        </h1>
+        <a href="{% url 'rasxod_list' %}" class="btn btn-ghost gap-2 btn-sm md:btn-md">
+            <i class="fas fa-arrow-left"></i>
+            <span class="hidden sm:inline">Orqaga</span>
+        </a>
+    </div>
+
+    <div class="mt-8">
+        <div class="card bg-base-100 shadow-xl max-w-2xl mx-auto">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-semibold text-base-content mb-6 flex items-center gap-2">
+                    <div class="bg-primary/10 p-2 rounded-full">
+                        <i class="fas fa-money-bill-wave text-primary"></i>
+                    </div>
+                    Rasxod ma'lumotlarini tahrirlash
+                </h2>
+                
+                <form method="POST" class="grid gap-6" id="rasxod-update-form">
+        {% csrf_token %}
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Rasxod nomi</span>
+                            <span class="label-text-alt text-error">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-file-invoice text-gray-400"></i>
+                            </span>
+                            <input type="text" name="rasxod_nomi" id="rasxod_nomi" value="{{ rasxod.rasxod_nomi }}" required 
+                                   placeholder="Rasxod nomini kiriting" 
+                                   class="input input-bordered w-full focus:border-primary" />
+                        </div>
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Sana</span>
+                            <span class="label-text-alt text-error">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-calendar text-gray-400"></i>
+                            </span>
+                            <input type="date" name="sana" id="sana" value="{{ rasxod.sana|date:'Y-m-d' }}" required 
+                                   class="input input-bordered w-full focus:border-primary" />
+                        </div>
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Summasi</span>
+                            <span class="label-text-alt text-error">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="btn btn-square btn-ghost">
+                                <i class="fas fa-money-bill-wave text-gray-400"></i>
+                            </span>
+                            <input type="text" name="summa" id="summa" required 
+                                   placeholder="Summani kiriting" 
+                                   class="input input-bordered w-full focus:border-primary" />
+                        </div>
+                        <label class="label">
+                            <span class="label-text-alt text-base-content/60">So'm ko'rinishida, raqamlar bilan kiriting</span>
+                        </label>
+        </div>
+    
+                    <div class="divider">Rasxod haqida qo'shimcha ma'lumot</div>
+                    
+                    <div class="bg-base-200/50 p-4 rounded-lg">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div class="flex items-center gap-3">
+                                <div class="avatar placeholder">
+                                    <div class="bg-primary/10 text-primary rounded-full w-12">
+                                        <i class="fas fa-info-circle text-xl"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="font-medium">Rasxod haqida</h3>
+                                    <p class="text-sm text-base-content/70">Kiritilgan ma'lumotlarni tekshiring</p>
+                                </div>
+                            </div>
+                            <div class="stats shadow bg-base-100">
+                                <div class="stat p-2">
+                                    <div class="stat-title text-xs">Kiritilgan summa</div>
+                                    <div class="stat-value text-primary text-lg" id="formatted-amount">0</div>
+                                    <div class="stat-desc text-xs">
+                                        <i class="fas fa-clock text-xs mr-1"></i> {% now "d.m.Y H:i" %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+        </div>
+    
+                    <div class="card-actions justify-end mt-4 gap-2">
+                        <button type="button" class="btn btn-ghost gap-2" onclick="resetForm()">
+                            <i class="fas fa-undo"></i>
+                            <span>Bekor qilish</span>
+                        </button>
+                        <button type="submit" class="btn btn-primary gap-2">
+                            <i class="fas fa-save"></i>
+                            <span>Saqlash</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const summaInput = document.getElementById('summa');
+        const formattedAmount = document.getElementById('formatted-amount');
+        
+        // Set initial value and format it
+        summaInput.value = "{{ rasxod.summa }}";
+        formatNumber(summaInput);
+        updateFormattedAmount();
+        
+        // Set up event listener for input changes
+        summaInput.addEventListener('input', function() {
+            formatNumber(this);
+            updateFormattedAmount();
+        });
+        
+        // Focus on first field
+        document.getElementById('rasxod_nomi').focus();
+    });
+    
+    // Format number with commas
+    function formatNumber(input) {
+        // Save cursor position
+        const cursorPos = input.selectionStart;
+        const oldLength = input.value.length;
+        
+        // Remove non-numeric characters
+        let value = input.value.replace(/\D/g, '');
+        
+        // Format with commas
+        if (value) {
+            value = parseInt(value, 10).toLocaleString('en-US');
+        }
+        
+        input.value = value;
+        
+        // Restore cursor approximate position
+        const newLength = input.value.length;
+        const newCursorPos = cursorPos + (newLength - oldLength);
+        if (newCursorPos >= 0) {
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }
+    }
+    
+    // Function to update the formatted amount display
+    function updateFormattedAmount() {
+        const value = document.getElementById('summa').value.replace(/,/g, '') || 0;
+        const formattedAmount = document.getElementById('formatted-amount');
+        formattedAmount.textContent = parseInt(value).toLocaleString('en-US');
+        
+        // Add a visual feedback when amount changes
+        formattedAmount.classList.add('animate-pulse');
+        setTimeout(() => {
+            formattedAmount.classList.remove('animate-pulse');
+        }, 300);
+    }
+    
+    // Reset form to original values
+    function resetForm() {
+        const form = document.getElementById('rasxod-update-form');
+        if (form) {
+            // Reset to original values
+            document.getElementById('rasxod_nomi').value = "{{ rasxod.rasxod_nomi }}";
+            document.getElementById('sana').value = "{{ rasxod.sana|date:'Y-m-d' }}";
+            document.getElementById('summa').value = "{{ rasxod.summa }}";
+            
+            // Format the number and update display
+            formatNumber(document.getElementById('summa'));
+            updateFormattedAmount();
+            
+            // Focus on first field
+            document.getElementById('rasxod_nomi').focus();
+        }
+    }
+</script>
+{% endblock %}
