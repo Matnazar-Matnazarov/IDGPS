@@ -165,5 +165,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Contact
 
 For support, feature requests, or questions:
-- Email: [your-email@example.com](mailto:your-email@example.com)
+- Email: [matnazarmatnazarov3@gmail.com](mailto:matnazarmatnazarov3@gmail.com)
 - Issues: [GitHub Issues](https://github.com/Matnazar-Matnazarov/IDGPS/issues)
