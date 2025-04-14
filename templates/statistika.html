@@ -2,136 +2,1060 @@
 {% load custom_filters %}
 {% load humanize %}
 {% block content %}
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Sarlavha va Filtrlar -->
-        <div class="mb-8">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-3xl font-bold text-gray-900">
-                    {{ current_year }} yil statistikasi
-                </h1>
-                <div class="flex space-x-4">
-                    <select name="year" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        {% for yil in yillar %}
-                        <option value="{{ yil }}" {% if yil == current_year %}selected{% endif %}>{{ yil }}</option>
-                        {% endfor %}
-                    </select>
+<div class="w-full bg-base-100 pb-8">
+    <!-- Header section with year selection -->
+    <div class="bg-base-200 rounded-lg shadow-md p-5 mb-6">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 class="text-2xl md:text-3xl font-bold">
+                <span class="text-primary">{{ current_year }}</span> yil statistikasi
+            </h1>
+            
+            <div class="flex items-center gap-2">
+                <select id="yearSelect" class="select select-bordered">
+                    {% for yil in yillar %}
+                    <option value="{{ yil }}" {% if yil == current_year %}selected{% endif %}>{{ yil }}</option>
+                    {% endfor %}
+                </select>
+                <button id="viewBtn" class="btn btn-primary">
+                    <i class="fas fa-eye mr-2"></i>Ko'rish
+                </button>
+                <button id="printBtn" class="btn btn-ghost">
+                    <i class="fas fa-print"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main stats overview -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Total subscribers -->
+        <div class="stats bg-base-100 shadow">
+            <div class="stat">
+                <div class="stat-figure text-primary">
+                    <i class="fas fa-users text-3xl"></i>
+                </div>
+                <div class="stat-title">Jami abonentlar</div>
+                <div class="stat-value text-primary">
+                    {% for month_num, stats in monthly_stats.items %}
+                    {% if forloop.last %}
+                    {{ stats.abonent.jami_aktiv|intcomma }}
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="stat-desc">
+                    {% for month_num, stats in monthly_stats.items %}
+                    {% if forloop.last %}
+                    <span class="text-success">+{{ stats.abonent.oylik_qoshilgan }}</span> oylik o'sish
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Annual income -->
+        <div class="stats bg-base-100 shadow">
+            <div class="stat">
+                <div class="stat-figure text-secondary">
+                    <i class="fas fa-money-bill-wave text-3xl"></i>
+                </div>
+                <div class="stat-title">Yillik tushum</div>
+                <div class="stat-value text-secondary">
+                    {% with total_income=0 %}
+                    {% for month_num, stats in monthly_stats.items %}
+                    {% with new_total=total_income|add:stats.summa.oylik_umumiy_summa %}
+                    {% with total_income=new_total %}{% endwith %}
+                    {% if forloop.last %}
+                    {{ new_total|floatformat:0|intcomma }}
+                    {% endif %}
+                    {% endwith %}
+                    {% endfor %}
+                    {% endwith %}
+                </div>
+                <div class="stat-desc">{{ current_year }} yil davomida</div>
+            </div>
+        </div>
+        
+        <!-- GPS sold -->
+        <div class="stats bg-base-100 shadow">
+            <div class="stat">
+                <div class="stat-figure text-accent">
+                    <i class="fas fa-map-marker-alt text-3xl"></i>
+                </div>
+                <div class="stat-title">Sotilgan GPS</div>
+                <div class="stat-value text-accent">
+                    {% for month_num, stats in monthly_stats.items %}
+                    {% if forloop.last %}
+                    {{ stats.gps.jami_sotilgan|intcomma }}
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="stat-desc">
+                    {% for month_num, stats in monthly_stats.items %}
+                    {% if forloop.last %}
+                    <span class="text-success">+{{ stats.gps.oylik_sotilgan }}</span> oylik sotilgan
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Subscription payments -->
+        <div class="stats bg-base-100 shadow">
+            <div class="stat">
+                <div class="stat-figure text-info">
+                    <i class="fas fa-credit-card text-3xl"></i>
+                </div>
+                <div class="stat-title">Abonent to'lovlar</div>
+                <div class="stat-value text-info">
+                    {% with total_payments=0 %}
+                    {% for month_num, stats in monthly_stats.items %}
+                    {% with new_total=total_payments|add:stats.summa.oylik_abonent %}
+                    {% with total_payments=new_total %}{% endwith %}
+                    {% if forloop.last %}
+                    {{ new_total|floatformat:0|intcomma }}
+                    {% endif %}
+                    {% endwith %}
+                    {% endfor %}
+                    {% endwith %}
+                </div>
+                <div class="stat-desc">{{ current_year }} yil davomida</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View tabs -->
+    <div class="tabs tabs-boxed bg-base-200 p-1 rounded-lg mb-6 flex justify-center">
+        <button class="tab tab-active" data-tab="category">Kategoriyalar</button>
+        <button class="tab" data-tab="monthly">Oylik ma'lumotlar</button>
+        <button class="tab" data-tab="charts">Grafiklar</button>
+    </div>
+
+    <!-- Category view -->
+    <div id="category-view" class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Abonentlar -->
+        <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+                <h3 class="card-title">
+                    <i class="fas fa-users text-primary mr-2"></i>Abonentlar
+                </h3>
+                <div class="divider my-1"></div>
+                
+                <div class="space-y-2">
+                {% for month_num, stats in monthly_stats.items %}
+                    <div class="collapse collapse-arrow bg-base-200 rounded-box">
+                        <input type="radio" name="abonent-accordion" {% if forloop.last %}checked{% endif %} />
+                        <div class="collapse-title font-medium">
+                            {{ stats.oy }}
+                        </div>
+                        <div class="collapse-content">
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span>Oldingi oydan:</span>
+                                    <span class="badge">{{ stats.abonent.oldingidagi_aktiv }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Oyda qo'shilgan:</span>
+                                    <span class="badge badge-success">+{{ stats.abonent.oylik_qoshilgan }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Jami aktiv:</span>
+                                    <span class="badge badge-primary">{{ stats.abonent.jami_aktiv }}</span>
+                                </div>
+                                
+                                <!-- Growth progress bar -->
+                                <div class="mt-2">
+                                    <div class="text-xs opacity-75 mb-1">O'sish</div>
+                                    <progress class="progress progress-primary w-full" value="{{ stats.abonent.oylik_qoshilgan }}" max="{{ stats.abonent.jami_aktiv|default:1 }}"></progress>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
                 </div>
             </div>
         </div>
 
-        <!-- Statistika kartlari -->
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Abonentlar</h3>
-                <div class="space-y-4">
-                    {% for month_num, stats in monthly_stats.items %}
-                    <div class="border-t pt-4 first:border-t-0 first:pt-0">
-                        <h4 class="font-medium text-gray-700 mb-2">{{ stats.oy }}</h4>
-                        <div class="space-y-2 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Oldingi oydan aktiv:</span>
-                                <span class="font-medium">{{ stats.abonent.oldingidagi_aktiv }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Oyda qo'shilgan:</span>
-                                <span class="font-medium text-green-600">+{{ stats.abonent.oylik_qoshilgan }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Jami aktiv:</span>
-                                <span class="font-medium text-blue-600">{{ stats.abonent.jami_aktiv }}</span>
+        <!-- To'lovlar -->
+        <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+                <h3 class="card-title">
+                    <i class="fas fa-money-bill-wave text-secondary mr-2"></i>To'lovlar
+                </h3>
+                <div class="divider my-1"></div>
+                
+                <div class="space-y-2">
+                {% for month_num, stats in monthly_stats.items %}
+                    <div class="collapse collapse-arrow bg-base-200 rounded-box">
+                        <input type="radio" name="tolov-accordion" {% if forloop.last %}checked{% endif %} />
+                        <div class="collapse-title font-medium">
+                            {{ stats.oy }}
+                        </div>
+                        <div class="collapse-content">
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span>To'langan:</span>
+                                    <span class="badge badge-success">{{ stats.tolov.oylik_tolaganlar }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>To'lanmagan:</span>
+                                    <span class="badge badge-error">{{ stats.tolov.oylik_tolamaganlar }}</span>
+                                </div>
+                                
+                                <!-- Payment rate -->
+                                {% with total=stats.tolov.oylik_tolaganlar|add:stats.tolov.oylik_tolamaganlar %}
+                                {% if total > 0 %}
+                                <div class="mt-2">
+                                    <div class="flex justify-between text-xs opacity-75 mb-1">
+                                        <span>To'lovlar</span>
+                                        <span id="payment-rate-{{ month_num }}">0%</span>
+                                    </div>
+                                    <progress class="progress progress-success w-full" value="{{ stats.tolov.oylik_tolaganlar }}" max="{{ total }}"></progress>
+                                </div>
+                                <script>
+                                    document.addEventListener('DOMContentLoaded', function() {
+                                        const paid = "{{ stats.tolov.oylik_tolaganlar }}";
+                                        const total = "{{ total }}";
+                                        if (parseInt(total) > 0) {
+                                            const percentage = (parseInt(paid) / parseInt(total) * 100).toFixed(1);
+                                            document.getElementById('payment-rate-{{ month_num }}').textContent = percentage + '%';
+                                        }
+                                    });
+                                </script>
+                                {% endif %}
+                                {% endwith %}
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
+                {% endfor %}
                 </div>
             </div>
+        </div>
 
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">To'lovlar</h3>
-                <div class="space-y-4">
-                    {% for month_num, stats in monthly_stats.items %}
-                    <div class="border-t pt-4 first:border-t-0 first:pt-0">
-                        <h4 class="font-medium text-gray-700 mb-2">{{ stats.oy }}</h4>
-                        <div class="space-y-2 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Oyda to'lamaganlar:</span>
-                                <span class="font-medium text-red-600">{{ stats.tolov.oylik_tolamaganlar|intcomma }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Oyda to'langanlar:</span>
-                                <span class="font-medium text-green-600">+{{ stats.tolov.oylik_tolaganlar|intcomma }}</span>
+        <!-- GPS va SIM -->
+        <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+                <h3 class="card-title">
+                    <i class="fas fa-map-marker-alt text-accent mr-2"></i>GPS va SIM
+                </h3>
+                <div class="divider my-1"></div>
+                
+                <div class="space-y-2">
+                {% for month_num, stats in monthly_stats.items %}
+                    <div class="collapse collapse-arrow bg-base-200 rounded-box">
+                        <input type="radio" name="gps-accordion" {% if forloop.last %}checked{% endif %} />
+                        <div class="collapse-title font-medium">
+                            {{ stats.oy }}
+                        </div>
+                        <div class="collapse-content">
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span>Skladda bor:</span>
+                                    <span class="badge">{{ stats.gps.hozir_skladda_bor|intcomma }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Oyda sotilgan:</span>
+                                    <span class="badge badge-success">{{ stats.gps.oylik_sotilgan|intcomma }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Jami sotilgan:</span>
+                                    <span class="badge badge-accent">{{ stats.gps.jami_sotilgan|intcomma }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>SIM kartalar:</span>
+                                    <span class="badge">{{ stats.sim.oylik|intcomma }}</span>
+                                </div>
+                                
+                                <!-- Sales visuals -->
+                                <div class="mt-2">
+                                    <div class="text-xs opacity-75 mb-1">Sotilgan</div>
+                                    <progress class="progress progress-accent w-full" value="{{ stats.gps.oylik_sotilgan }}" max="{{ stats.gps.oylik_sotilgan|add:stats.gps.hozir_skladda_bor|default:1 }}"></progress>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
+                {% endfor %}
                 </div>
             </div>
+        </div>
 
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">GPS va SIM</h3>
-                <div class="space-y-4">
-                    {% for month_num, stats in monthly_stats.items %}
-                    <div class="border-t pt-4 first:border-t-0 first:pt-0">
-                        <h4 class="font-medium text-gray-700 mb-2">{{ stats.oy }}</h4>
-                        <div class="space-y-2 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">O'tgan oy skladdagi:</span>
-                                <span class="font-medium">{{ stats.gps.otgan_oy_sklad | intcomma }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Hozir skladda bor:</span>
-                                <span class="font-medium">{{ stats.gps.hozir_skladda_bor | intcomma }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Oyda sotilgan:</span>
-                                <span class="font-medium text-green-600">{{ stats.gps.oylik_sotilgan | intcomma }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Jami sotilgan:</span>
-                                <span class="font-medium text-blue-600">{{ stats.gps.jami_sotilgan | intcomma }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">SIM kartalar:</span>
-                                <span class="font-medium">{{ stats.sim.oylik | intcomma }}</span>
+        <!-- Summalar -->
+        <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+                <h3 class="card-title">
+                    <i class="fas fa-dollar-sign text-info mr-2"></i>Summalar
+                </h3>
+                <div class="divider my-1"></div>
+                
+                <div class="space-y-2">
+                {% for month_num, stats in monthly_stats.items %}
+                    <div class="collapse collapse-arrow bg-base-200 rounded-box">
+                        <input type="radio" name="summa-accordion" {% if forloop.last %}checked{% endif %} />
+                        <div class="collapse-title font-medium">
+                            {{ stats.oy }}
+                        </div>
+                        <div class="collapse-content">
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span>Umumiy tushum:</span>
+                                    <span class="text-success font-medium">{{ stats.summa.oylik_umumiy_summa|floatformat:0|intcomma }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Abonent to'lov:</span>
+                                    <span class="text-info font-medium">{{ stats.summa.oylik_abonent|floatformat:0|intcomma }}</span>
+                                </div>
+                                
+                                <!-- Abonent payment share -->
+                                {% if stats.summa.oylik_umumiy_summa > 0 %}
+                                <div class="mt-2">
+                                    <div class="flex justify-between text-xs opacity-75 mb-1">
+                                        <span>Abonent to'lov ulushi</span>
+                                        <span id="payment-share-{{ month_num }}">0%</span>
+                                    </div>
+                                    <progress class="progress progress-info w-full" value="{{ stats.summa.oylik_abonent }}" max="{{ stats.summa.oylik_umumiy_summa }}"></progress>
+                                </div>
+                                <script>
+                                    document.addEventListener('DOMContentLoaded', function() {
+                                        const abonent = "{{ stats.summa.oylik_abonent }}";
+                                        const total = "{{ stats.summa.oylik_umumiy_summa }}";
+                                        if (parseInt(total) > 0) {
+                                            const percentage = (parseInt(abonent) / parseInt(total) * 100).toFixed(1);
+                                            document.getElementById('payment-share-{{ month_num }}').textContent = percentage + '%';
+                                        }
+                                    });
+                                </script>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
+                {% endfor %}
                 </div>
             </div>
+        </div>
+    </div>
 
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Summalar</h3>
-                <div class="space-y-4">
+    <!-- Monthly view -->
+    <div id="monthly-view" class="hidden mb-8">
+        <div class="overflow-x-auto">
+            <table class="table table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th>Oy</th>
+                        <th>Abonentlar</th>
+                        <th>To'lovlar</th>
+                        <th>GPS sotilgan</th>
+                        <th>Tushum</th>
+                        <th>Abonent to'lov</th>
+                    </tr>
+                </thead>
+                <tbody>
                     {% for month_num, stats in monthly_stats.items %}
-                    <div class="border-t pt-4 first:border-t-0 first:pt-0">
-                        <h4 class="font-medium text-gray-700 mb-2">{{ stats.oy }}</h4>
-                        <div class="space-y-2 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Umumiy tushum:</span>
-                                <span class="font-medium text-green-600">{{ stats.summa.oylik_umumiy_summa|floatformat:0 | intcomma }}</span>
+                    <tr>
+                        <td class="font-medium">{{ stats.oy }}</td>
+                        <td>
+                            <div class="flex flex-col">
+                                <span class="badge badge-sm badge-success">+{{ stats.abonent.oylik_qoshilgan }}</span>
+                                <span class="mt-1">Jami: {{ stats.abonent.jami_aktiv }}</span>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Abonent to'lov:</span>
-                                <span class="font-medium text-blue-600">{{ stats.summa.oylik_abonent|floatformat:0 | intcomma }}</span>
+                        </td>
+                        <td>
+                            <div class="flex flex-col">
+                                <span class="badge badge-sm badge-success">{{ stats.tolov.oylik_tolaganlar }}</span>
+                                <span class="badge badge-sm badge-error mt-1">{{ stats.tolov.oylik_tolamaganlar }}</span>
                             </div>
+                        </td>
+                        <td>
+                            <div class="flex flex-col">
+                                <span class="badge badge-sm badge-success">+{{ stats.gps.oylik_sotilgan }}</span>
+                                <span class="mt-1">Jami: {{ stats.gps.jami_sotilgan }}</span>
+                            </div>
+                        </td>
+                        <td class="text-success">{{ stats.summa.oylik_umumiy_summa|floatformat:0|intcomma }}</td>
+                        <td class="text-info">{{ stats.summa.oylik_abonent|floatformat:0|intcomma }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Charts view -->
+    <div id="charts-view" class="hidden mb-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Abonentlar dinamikasi -->
+            <div class="card bg-base-100 shadow-lg">
+                <div class="card-body">
+                    <h2 class="card-title">
+                        <i class="fas fa-users text-primary mr-2"></i>
+                        Abonentlar dinamikasi
+                    </h2>
+                    <div class="divider my-1"></div>
+                    <div class="mt-2 h-64 relative">
+                        <canvas id="abonentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tushumlar -->
+            <div class="card bg-base-100 shadow-lg">
+                <div class="card-body">
+                    <h2 class="card-title">
+                        <i class="fas fa-money-bill-wave text-secondary mr-2"></i>
+                        Tushum dinamikasi
+                    </h2>
+                    <div class="divider my-1"></div>
+                    <div class="mt-2 h-64 relative">
+                        <canvas id="tushumChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- GPS sotish -->
+            <div class="card bg-base-100 shadow-lg">
+                <div class="card-body">
+                    <h2 class="card-title">
+                        <i class="fas fa-map-marker-alt text-accent mr-2"></i>
+                        GPS sotish dinamikasi
+                    </h2>
+                    <div class="divider my-1"></div>
+                    <div class="mt-2 h-64 relative">
+                        <canvas id="gpsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- To'lovlar nisbati -->
+            <div class="card bg-base-100 shadow-lg">
+                <div class="card-body">
+                    <h2 class="card-title">
+                        <i class="fas fa-credit-card text-info mr-2"></i>
+                        To'lovlar nisbati
+                    </h2>
+                    <div class="divider my-1"></div>
+                    <div class="flex justify-center mt-2">
+                        <div class="w-56 h-56 relative">
+                            <canvas id="paymentsChart"></canvas>
                         </div>
                     </div>
-                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- O'sish foizlari -->
+            <div class="card bg-base-100 shadow-lg">
+                <div class="card-body">
+                    <h2 class="card-title">
+                        <i class="fas fa-chart-line text-success mr-2"></i>
+                        O'sish foizlari
+                    </h2>
+                    <div class="divider my-1"></div>
+                    <div class="mt-2 h-64 relative">
+                        <canvas id="growthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Foyda va xarajatlar -->
+            <div class="card bg-base-100 shadow-lg">
+                <div class="card-body">
+                    <h2 class="card-title">
+                        <i class="fas fa-dollar-sign text-secondary mr-2"></i>
+                        Foyda va xarajatlar
+                    </h2>
+                    <div class="divider my-1"></div>
+                    <div class="mt-2 h-64 relative">
+                        <canvas id="profitChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Yillik statistika -->
+            <div class="stats stats-vertical shadow w-full">
+                <div class="stat">
+                    <div class="stat-title">O'rtacha oylik o'sish</div>
+                    <div class="stat-value text-success">{{ chart_data.annual_totals.avg_monthly_growth|floatformat:1 }}%</div>
+                    <div class="stat-desc">Abonentlar soni bo'yicha</div>
+                </div>
+                
+                <div class="stat">
+                    <div class="stat-title">To'lovlar yillik nisbati</div>
+                    <div class="stat-value text-primary">{{ chart_data.annual_totals.payment_success_rate|floatformat:1 }}%</div>
+                    <div class="stat-desc">To'langan / To'lanmagan</div>
+                </div>
+                
+                <div class="stat">
+                    <div class="stat-title">Eng ko'p sotilgan oylar</div>
+                    <div class="stat-value text-accent">{{ chart_data.top_months.0 }}</div>
+                    <div class="stat-desc">
+                        {% if chart_data.top_months.1 %}Keyingilari: {{ chart_data.top_months.1 }}{% if chart_data.top_months.2 %}, {{ chart_data.top_months.2 }}{% endif %}{% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Umumiy raqamlar -->
+            <div class="stats shadow w-full">
+                <div class="stat">
+                    <div class="stat-figure text-primary">
+                        <i class="fas fa-users text-4xl"></i>
+                    </div>
+                    <div class="stat-title">Jami abonentlar</div>
+                    <div class="stat-value text-primary">{{ chart_data.annual_totals.total_subscribers|intcomma }}</div>
+                    <div class="stat-desc">{{ current_year }} yil</div>
+                </div>
+                
+                <div class="stat">
+                    <div class="stat-figure text-accent">
+                        <i class="fas fa-map-marker-alt text-4xl"></i>
+                    </div>
+                    <div class="stat-title">Sotilgan GPS</div>
+                    <div class="stat-value text-accent">{{ chart_data.annual_totals.total_gps_sold|intcomma }}</div>
+                    <div class="stat-desc">{{ current_year }} yil</div>
+                </div>
+                
+                <div class="stat">
+                    <div class="stat-figure text-secondary">
+                        <i class="fas fa-money-bill-wave text-4xl"></i>
+                    </div>
+                    <div class="stat-title">Yillik tushum</div>
+                    <div class="stat-value text-secondary">{{ chart_data.annual_totals.total_revenue|intcomma }}</div>
+                    <div class="stat-desc">{{ current_year }} yil</div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Chart.js kutubxonasini qo'shamiz -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const yearSelect = document.querySelector('select[name="year"]');
+        // Charts initialization
+        function initCharts() {
+            // Mavjud data extraction
+            const labels = [
+                {% for month_num, stats in monthly_stats.items %}
+                "{{ stats.oy }}",
+                {% endfor %}
+            ];
+            
+            // Abonentlar data
+            const newSubscribers = [
+                {% for month_num, stats in monthly_stats.items %}
+                {{ stats.abonent.oylik_qoshilgan }},
+                {% endfor %}
+            ];
+            
+            const totalSubscribers = [
+                {% for month_num, stats in monthly_stats.items %}
+                {{ stats.abonent.jami_aktiv }},
+                {% endfor %}
+            ];
+            
+            // Tushum data
+            const revenues = [
+                {% for month_num, stats in monthly_stats.items %}
+                {{ stats.summa.oylik_umumiy_summa|floatformat:0 }},
+                {% endfor %}
+            ];
+            
+            const abonentPayments = [
+                {% for month_num, stats in monthly_stats.items %}
+                {{ stats.summa.oylik_abonent|floatformat:0 }},
+                {% endfor %}
+            ];
+            
+            // GPS data
+            const soldGPS = [
+                {% for month_num, stats in monthly_stats.items %}
+                {{ stats.gps.oylik_sotilgan }},
+                {% endfor %}
+            ];
+            
+            // To'lovlar data
+            const paidSubscribers = [
+                {% for month_num, stats in monthly_stats.items %}
+                {{ stats.tolov.oylik_tolaganlar }},
+                {% endfor %}
+            ];
+            
+            const unpaidSubscribers = [
+                {% for month_num, stats in monthly_stats.items %}
+                {{ stats.tolov.oylik_tolamaganlar }},
+                {% endfor %}
+            ];
+            
+            // Grafiklarni yaratish
+            initAbonentChart(labels, newSubscribers, totalSubscribers);
+            initRevenueChart(labels, revenues, abonentPayments);
+            initGPSChart(labels, soldGPS);
+            initPaymentsChart(paidSubscribers, unpaidSubscribers);
+            
+            // Qo'shimcha grafiklar
+            initGrowthChart(labels);
+            initProfitChart(labels);
+        }
         
-        yearSelect.addEventListener('change', function() {
-            window.location.href = `?year=${yearSelect.value}`;
+        // Abonentlar grafigi
+        function initAbonentChart(labels, newSubscribers, totalSubscribers) {
+            const ctx = document.getElementById('abonentChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Oylik yangi abonentlar',
+                            data: newSubscribers,
+                            backgroundColor: 'rgba(52, 211, 153, 0.2)',
+                            borderColor: 'rgba(52, 211, 153, 1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Jami abonentlar',
+                            data: totalSubscribers,
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Tushum grafigi
+        function initRevenueChart(labels, revenues, abonentPayments) {
+            const ctx = document.getElementById('tushumChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Umumiy tushum',
+                            data: revenues,
+                            backgroundColor: 'rgba(249, 115, 22, 0.7)',
+                            borderColor: 'rgba(249, 115, 22, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Abonent to\'lovlar',
+                            data: abonentPayments,
+                            backgroundColor: 'rgba(14, 165, 233, 0.7)',
+                            borderColor: 'rgba(14, 165, 233, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString() + ' so\'m';
+                                }
+                            },
+                            grid: {
+                                drawBorder: false
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('uz-UZ').format(context.parsed.y) + ' so\'m';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // GPS grafigi
+        function initGPSChart(labels, soldGPS) {
+            const ctx = document.getElementById('gpsChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Sotilgan GPS qurilmalari',
+                            data: soldGPS,
+                            backgroundColor: 'rgba(168, 85, 247, 0.7)',
+                            borderColor: 'rgba(168, 85, 247, 1)',
+                            borderWidth: 1,
+                            borderRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+        }
+        
+        // To'lovlar grafigi (donut)
+        function initPaymentsChart(paidSubscribers, unpaidSubscribers) {
+            // Calculate total counts for the year
+            const totalPaid = paidSubscribers.reduce(function(a, b) { return a + b; }, 0);
+            const totalUnpaid = unpaidSubscribers.reduce(function(a, b) { return a + b; }, 0);
+            
+            const ctx = document.getElementById('paymentsChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['To\'langan', 'To\'lanmagan'],
+                    datasets: [
+                        {
+                            data: [totalPaid, totalUnpaid],
+                            backgroundColor: [
+                                'rgba(34, 197, 94, 0.7)',
+                                'rgba(239, 68, 68, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(34, 197, 94, 1)',
+                                'rgba(239, 68, 68, 1)'
+                            ],
+                            borderWidth: 1,
+                            hoverOffset: 10
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = totalPaid + totalUnpaid;
+                                    const percentage = Math.round((context.parsed / total) * 100);
+                                    return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // O'sish grafigi - Yangi
+        function initGrowthChart(labels) {
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            
+            // Chart.js uchun raqamlar
+            const growthRates = [
+                {% for month, rate in chart_data.growth_rates.items %}
+                {{ rate }},
+                {% endfor %}
+            ];
+            
+            const revenueGrowth = [
+                {% for month, rate in chart_data.revenue_growth.items %}
+                {{ rate }},
+                {% endfor %}
+            ];
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Abonentlar o\'sishi (%)',
+                            data: growthRates,
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Tushum o\'sishi (%)',
+                            data: revenueGrowth,
+                            backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                            borderColor: 'rgba(249, 115, 22, 1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            grid: {
+                                drawBorder: false
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Foyda grafigi - Yangi
+        function initProfitChart(labels) {
+            const ctx = document.getElementById('profitChart').getContext('2d');
+            
+            // Chart.js uchun raqamlar
+            const revenues = [
+                {% for month_num, stats in monthly_stats.items %}
+                {{ stats.summa.oylik_umumiy_summa|floatformat:0 }},
+                {% endfor %}
+            ];
+            
+            const masterlik = [
+                {% for month_num, stats in monthly_stats.items %}
+                {{ stats.summa.oylik_masterlik|floatformat:0 }},
+                {% endfor %}
+            ];
+            
+            const sofFoyda = [
+                {% for month_num, stats in monthly_stats.items %}
+                {{ stats.summa.sof_foyda|floatformat:0 }},
+                {% endfor %}
+            ];
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Umumiy tushum',
+                            data: revenues,
+                            backgroundColor: 'rgba(249, 115, 22, 0.7)',
+                            borderColor: 'rgba(249, 115, 22, 1)',
+                            borderWidth: 1,
+                            stack: 'Stack 0'
+                        },
+                        {
+                            label: 'Masterlik xarajatlari',
+                            data: masterlik,
+                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            borderWidth: 1,
+                            stack: 'Stack 1'
+                        },
+                        {
+                            label: 'Sof foyda',
+                            data: sofFoyda,
+                            backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                            borderColor: 'rgba(34, 197, 94, 1)',
+                            borderWidth: 1,
+                            stack: 'Stack 1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString() + ' so\'m';
+                                }
+                            },
+                            grid: {
+                                drawBorder: false
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('uz-UZ').format(context.parsed.y) + ' so\'m';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Tab switching functionality
+        const tabs = document.querySelectorAll('.tab');
+        const categoryView = document.getElementById('category-view');
+        const monthlyView = document.getElementById('monthly-view');
+        const chartsView = document.getElementById('charts-view');
+        
+        let chartsInitialized = false;
+        
+        tabs.forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                // Remove active class from all tabs
+                tabs.forEach(function(t) { t.classList.remove('tab-active'); });
+                
+                // Add active class to clicked tab
+                this.classList.add('tab-active');
+                
+                // Hide all views
+                categoryView.classList.add('hidden');
+                monthlyView.classList.add('hidden');
+                chartsView.classList.add('hidden');
+                
+                // Show selected view
+                const tabName = this.getAttribute('data-tab');
+                if (tabName === 'category') {
+                    categoryView.classList.remove('hidden');
+                } else if (tabName === 'monthly') {
+                    monthlyView.classList.remove('hidden');
+                } else if (tabName === 'charts') {
+                    chartsView.classList.remove('hidden');
+                    
+                    // Initialize charts if not already
+                    if (!chartsInitialized) {
+                        initCharts();
+                        chartsInitialized = true;
+                    }
+                }
+            });
+        });
+        
+        // Year selection handler
+        const yearSelect = document.getElementById('yearSelect');
+        const viewBtn = document.getElementById('viewBtn');
+        
+        viewBtn.addEventListener('click', function() {
+            window.location.href = '?year=' + yearSelect.value;
+        });
+        
+        // Print functionality
+        const printBtn = document.getElementById('printBtn');
+        printBtn.addEventListener('click', function() {
+            window.print();
         });
     });
 </script>
+
+<style>
+    @media print {
+        .btn, .tabs, header, footer, nav, .no-print {
+            display: none !important;
+        }
+        
+        .hidden {
+            display: block !important;
+        }
+        
+        .card {
+            break-inside: avoid;
+        }
+    }
+</style>
 {% endblock %}

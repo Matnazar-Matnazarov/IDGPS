@@ -126,16 +126,102 @@ class StatistikaView(LoginRequiredMixin, TemplateView):
         # Barcha oylar uchun statistikani bir so'rov bilan olish
         monthly_stats = self.get_optimized_stats(selected_year, current_month)
 
+        # Grafik va diagrammalar uchun qo'shimcha ma'lumotlar
         context.update(
             {
                 "monthly_stats": monthly_stats,
                 "current_year": selected_year,
                 "current_month": now.month,
                 "yillar": range(2020, now.year + 1),
+                "chart_data": self.prepare_chart_data(monthly_stats, selected_year, current_month),
             }
         )
 
         return context
+
+    def prepare_chart_data(self, monthly_stats, selected_year, current_month):
+        """
+        Grafiklar uchun qo'shimcha ma'lumotlarni tayyorlash
+        """
+        # Oylik o'sish foizlari
+        growth_rates = {}
+        revenue_growth = {}
+        gps_penetration = {}
+        payment_ratios = {}
+        
+        for month in range(1, current_month + 1):
+            stats = monthly_stats.get(month, {})
+            prev_month = month - 1
+            
+            # Abonentlar o'sishi
+            if month > 1 and prev_month in monthly_stats:
+                prev_count = monthly_stats[prev_month]["abonent"]["jami_aktiv"]
+                current_count = stats["abonent"]["jami_aktiv"]
+                if prev_count > 0:
+                    growth_pct = ((current_count - prev_count) / prev_count) * 100
+                else:
+                    growth_pct = 100 if current_count > 0 else 0
+                growth_rates[month] = round(growth_pct, 1)
+            else:
+                growth_rates[month] = 0
+            
+            # Tushum o'sishi
+            if month > 1 and prev_month in monthly_stats:
+                prev_revenue = monthly_stats[prev_month]["summa"]["oylik_umumiy_summa"]
+                current_revenue = stats["summa"]["oylik_umumiy_summa"]
+                if prev_revenue > 0:
+                    revenue_pct = ((current_revenue - prev_revenue) / prev_revenue) * 100
+                else:
+                    revenue_pct = 100 if current_revenue > 0 else 0
+                revenue_growth[month] = round(revenue_pct, 1)
+            else:
+                revenue_growth[month] = 0
+            
+            # GPS ulushi
+            total_gps = stats["gps"]["jami_sotilgan"] + stats["gps"]["hozir_skladda_bor"]
+            if total_gps > 0:
+                gps_penetration[month] = round((stats["gps"]["jami_sotilgan"] / total_gps) * 100, 1)
+            else:
+                gps_penetration[month] = 0
+            
+            # To'lovlar nisbati
+            total_subscribers = stats["tolov"]["oylik_tolaganlar"] + stats["tolov"]["oylik_tolamaganlar"]
+            if total_subscribers > 0:
+                payment_ratios[month] = round((stats["tolov"]["oylik_tolaganlar"] / total_subscribers) * 100, 1)
+            else:
+                payment_ratios[month] = 0
+        
+        # Eng ko'p sotilgan oylarni aniqlash
+        monthly_sales = [(month, stats["gps"]["oylik_sotilgan"]) for month, stats in monthly_stats.items()]
+        monthly_sales.sort(key=lambda x: x[1], reverse=True)
+        top_months = [self.oylar[m-1] for m, _ in monthly_sales[:3]]
+        
+        # Yillik statistika
+        annual_totals = {
+            "total_subscribers": monthly_stats[current_month]["abonent"]["jami_aktiv"] if current_month in monthly_stats else 0,
+            "total_revenue": sum(stats["summa"]["oylik_umumiy_summa"] for stats in monthly_stats.values()),
+            "total_gps_sold": monthly_stats[current_month]["gps"]["jami_sotilgan"] if current_month in monthly_stats else 0,
+            "avg_monthly_growth": sum(growth_rates.values()) / len(growth_rates) if growth_rates else 0,
+            "highest_month": self.oylar[monthly_sales[0][0]-1] if monthly_sales else "",
+            "payment_success_rate": sum(payment_ratios.values()) / len(payment_ratios) if payment_ratios else 0,
+        }
+        
+        return {
+            "growth_rates": growth_rates,
+            "revenue_growth": revenue_growth,
+            "gps_penetration": gps_penetration,
+            "payment_ratios": payment_ratios,
+            "top_months": top_months,
+            "annual_totals": annual_totals,
+            "colors": {
+                "primary": "rgba(59, 130, 246, 0.7)",
+                "secondary": "rgba(249, 115, 22, 0.7)",
+                "accent": "rgba(168, 85, 247, 0.7)",
+                "success": "rgba(34, 197, 94, 0.7)",
+                "error": "rgba(239, 68, 68, 0.7)",
+                "info": "rgba(14, 165, 233, 0.7)"
+            }
+        }
 
     def get_optimized_stats(self, year, current_month):
         """
@@ -224,11 +310,13 @@ class StatistikaView(LoginRequiredMixin, TemplateView):
                     "count": 0,
                     "total_summa": 0,
                     "sim_count": 0,
+                    "masterlik": 0,  # Masterlik xarajatlari
                 }
 
             # Ushbu oy uchun hisoblarni yuritish
             sales_by_month[sale_month]["count"] += 1
             sales_by_month[sale_month]["total_summa"] += sale.summasi
+            sales_by_month[sale_month]["masterlik"] += sale.master_summasi
 
             # SIM karta sonini hisoblash (vergullar bilan ajratilgan)
             sim_count = 1
@@ -335,6 +423,11 @@ class StatistikaView(LoginRequiredMixin, TemplateView):
                 ),
                 "oylik_abonent": payments_by_month.get(month, {}).get(
                     "abonent_payments", 0
+                ),
+                "oylik_masterlik": sales_by_month.get(month, {}).get("masterlik", 0),
+                "sof_foyda": (
+                    sales_by_month.get(month, {}).get("total_summa", 0) - 
+                    sales_by_month.get(month, {}).get("masterlik", 0)
                 ),
             }
 
