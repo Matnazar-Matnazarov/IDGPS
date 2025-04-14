@@ -99,7 +99,7 @@ class MijozlarView(LoginRequiredMixin, TemplateView):
 
 
 class StatistikaView(LoginRequiredMixin, TemplateView):
-    template_name = "statistika.html"
+    template_name = "statistika.jinja"
     oylar = [
         "Yanvar",
         "Fevral",
