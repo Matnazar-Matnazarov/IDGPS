@@ -99,6 +99,19 @@ class Sklad_sotish(models.Model):
     def __str__(self):
         return f"{self.sotish.mijoz}-{self.sklad.gps_id}"
 
+class Oylar(models.TextChoices):
+    YANVAR = "Yanvar", "Yanvar"
+    FEVRAL = "Fevral", "Fevral"
+    MART = "Mart", "Mart"
+    APREL = "Aprel", "Aprel"
+    MAY = "May", "May"
+    IYUN = "Iyun", "Iyun"
+    IYUL = "Iyul", "Iyul"
+    AVGUST = "Avgust", "Avgust"
+    SENTABR = "Sentabr", "Sentabr"
+    OKTABR = "Oktabr", "Oktabr"
+    NOYABR = "Noyabr", "Noyabr"
+    DEKABR = "Dekabr", "Dekabr"
 
 class Bugalteriya(models.Model):
     sotish = models.ForeignKey("Sotish", on_delete=models.CASCADE)  # Mijoz
@@ -107,20 +120,7 @@ class Bugalteriya(models.Model):
     )  # Mijozning GPS qurilmasi
     oy = models.CharField(
         max_length=15,
-        choices=[
-            ("Yanvar", "Yanvar"),
-            ("Fevral", "Fevral"),
-            ("Mart", "Mart"),
-            ("Aprel", "Aprel"),
-            ("May", "May"),
-            ("Iyun", "Iyun"),
-            ("Iyul", "Iyul"),
-            ("Avgust", "Avgust"),
-            ("Sentabr", "Sentabr"),
-            ("Oktabr", "Oktabr"),
-            ("Noyabr", "Noyabr"),
-            ("Dekabr", "Dekabr"),
-        ],
+        choices=Oylar.choices,
     )
     yil = models.IntegerField(
         validators=[MinValueValidator(2000), MaxValueValidator(timezone.now().year)],
@@ -135,8 +135,7 @@ class Bugalteriya(models.Model):
         verbose_name_plural = "Bugalteriya hisobotlari"
 
     def __str__(self):
-        return f"{self.sotish} - {self.gps} - {self.oy} {self.yil}"
-
+        return f"{self.sotish} - {self.gps} - {self.oy} {self.yil} - {self.abonent_tolov}"
 
 class Note(models.Model):
     izoh = models.TextField()

@@ -151,28 +151,48 @@ function addGpsField() {
         newField.style.opacity = '0';
         newField.style.transform = 'translateY(20px)';
         
-        // Get all currently selected GPS IDs
-        const gpsSelects = document.querySelectorAll('.gps-select');
-        if (!gpsSelects || gpsSelects.length === 0) {
-            console.error('No GPS selects found');
-            return;
-        }
+        // Get available GPS options
+        let optionsHTML = '<option value="">GPS tanlang</option>';
         
+        // Check if there are already GPS selects
+        const gpsSelects = document.querySelectorAll('.gps-select');
         const selectedValues = Array.from(gpsSelects)
             .map(select => select.value)
             .filter(value => value !== '');
         
-        // Get first select to copy options
+        // Find a select with options to use as a template
         const firstSelect = document.querySelector('.gps-select');
         
-        // Generate HTML with available options
-        let optionsHTML = '<option value="">GPS tanlang</option>';
-        if (firstSelect && firstSelect.options) {
+        if (firstSelect && firstSelect.options && firstSelect.options.length > 0) {
+            // Copy options from existing select
             Array.from(firstSelect.options).forEach(option => {
                 if (option.value !== '' && !selectedValues.includes(option.value)) {
                     optionsHTML += `<option value="${option.value}">${option.textContent}</option>`;
                 }
             });
+        } else {
+            // If no existing select with options, try to find available GPSs from a different source
+            const mavjudGpslar = document.querySelectorAll('#mavjud_gpslar option');
+            if (mavjudGpslar && mavjudGpslar.length > 0) {
+                Array.from(mavjudGpslar).forEach(option => {
+                    if (option.value !== '' && !selectedValues.includes(option.value)) {
+                        optionsHTML += `<option value="${option.value}">${option.textContent}</option>`;
+                    }
+                });
+            } else {
+                // Fallback - try to get GPS options from a different field
+                const allSelects = document.querySelectorAll('select');
+                for (const select of allSelects) {
+                    if (select.name === 'gps_id' || select.id === 'id_gps_id' || select.classList.contains('gps-select')) {
+                        Array.from(select.options).forEach(option => {
+                            if (option.value !== '' && !selectedValues.includes(option.value)) {
+                                optionsHTML += `<option value="${option.value}">${option.textContent}</option>`;
+                            }
+                        });
+                        break;
+                    }
+                }
+            }
         }
         
         newField.innerHTML = `
@@ -255,6 +275,32 @@ function addGpsField() {
                     // Update options but in a safe way, without causing infinite loops
                     setTimeout(updateGpsOptions, 10);
                 });
+                
+                // Load options via AJAX if there are no options
+                if (newSelect.options.length <= 1) {
+                    // Try to fetch available GPS IDs from server
+                    $.ajax({
+                        url: '/api/available-gps/',  // Check if this endpoint exists
+                        type: 'GET',
+                        success: function(data) {
+                            if (data && data.length > 0) {
+                                // Clear existing options
+                                $(newSelect).empty().append('<option value="">GPS tanlang</option>');
+                                
+                                // Add new options
+                                data.forEach(function(gps) {
+                                    $(newSelect).append(`<option value="${gps.id}">${gps.gps_id}</option>`);
+                                });
+                                
+                                // Refresh Select2
+                                $(newSelect).trigger('change');
+                            }
+                        },
+                        error: function() {
+                            console.error('Failed to fetch available GPS IDs');
+                        }
+                    });
+                }
             }
         }
         

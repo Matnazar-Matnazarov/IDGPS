@@ -1,0 +1,429 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Error message display -->
+    {% if error %}
+    <div class="alert alert-error shadow-lg mb-6">
+        <div>
+            <i class="fas fa-exclamation-circle"></i>
+            <span>Xatolik: {{ error }}</span>
+        </div>
+        <div class="flex-none">
+            <a href="?debug=true" class="btn btn-sm btn-ghost">Debug rejimiga o'tish</a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Page Header -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-primary">
+            Bugalteriya -
+            <span class="text-primary-focus">
+                <!-- Display the current month name -->
+                {{ current_month }}
+            </span>
+        </h1>
+        <div class="flex space-x-2 mt-4 md:mt-0">
+            <a href="{% url 'bugalteriya' %}" class="btn btn-ghost btn-sm gap-2">
+                <i class="fas fa-table"></i>
+                Batafsil
+            </a>
+            <button onclick="window.print()" class="btn btn-ghost btn-sm gap-2">
+                <i class="fas fa-print"></i>
+                Chop etish
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <!-- Total GPS Card -->
+        <div class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
+            <div class="card-body p-5">
+                <div class="flex items-center gap-4">
+                    <div class="bg-primary/10 p-3 rounded-full">
+                        <i class="fas fa-satellite text-primary text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-base-content/70">Jami GPS qurilmalar</h3>
+                        <p class="text-2xl font-bold text-base-content">{{ statistika.sotilgan_gps_lar_soni }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paid Subscriptions Card -->
+        <div class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
+            <div class="card-body p-5">
+                <div class="flex items-center gap-4">
+                    <div class="bg-success/10 p-3 rounded-full">
+                        <i class="fas fa-check-circle text-success text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-base-content/70">To'langan abonentlar</h3>
+                        <div class="flex items-end gap-2">
+                            <p class="text-2xl font-bold text-base-content">{{ statistika.tolangan_soni }}</p>
+                            <p class="text-sm text-base-content/70">/ {{ statistika.sotilgan_gps_lar_soni }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="w-full bg-base-200 rounded-full h-2.5 overflow-hidden">
+                        {% if statistika.sotilgan_gps_lar_soni > 0 %}
+                            {% widthratio statistika.tolangan_soni statistika.sotilgan_gps_lar_soni 100 as progress_percent %}
+                            <div class="bg-success h-2.5 rounded-full transition-all duration-500" 
+                                 data-percent="{{ progress_percent }}" id="tolangan-progress"></div>
+                        {% else %}
+                            <div class="bg-success h-2.5 rounded-full w-0"></div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unpaid Subscriptions Card -->
+        <div class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
+            <div class="card-body p-5">
+                <div class="flex items-center gap-4">
+                    <div class="bg-error/10 p-3 rounded-full">
+                        <i class="fas fa-times-circle text-error text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-base-content/70">To'lanmagan abonentlar</h3>
+                        <div class="flex items-end gap-2">
+                            <p class="text-2xl font-bold text-base-content">{{ statistika.umumiy_tolanmaganlar_soni }}</p>
+                            <p class="text-sm text-base-content/70">/ {{ statistika.sotilgan_gps_lar_soni }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="w-full bg-base-200 rounded-full h-2.5 overflow-hidden">
+                        {% if statistika.sotilgan_gps_lar_soni > 0 %}
+                            {% widthratio statistika.umumiy_tolanmaganlar_soni statistika.sotilgan_gps_lar_soni 100 as unpaid_percent %}
+                            <div class="bg-error h-2.5 rounded-full transition-all duration-500" 
+                                 data-percent="{{ unpaid_percent }}" id="tolanmagan-progress"></div>
+                        {% else %}
+                            <div class="bg-error h-2.5 rounded-full w-0"></div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payments Summary Card -->
+    <div class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow mb-8">
+        <div class="card-body p-6">
+            <h2 class="card-title text-lg text-base-content mb-4">
+                <i class="fas fa-money-bill-wave text-primary mr-2"></i>
+                To'lovlar bo'yicha umumiy ma'lumot
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Expected Payments -->
+                <div class="bg-base-200 p-4 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-base font-medium text-base-content">To'lanishi kerak bo'lgan summa</h3>
+                        <span class="badge badge-primary">Umumiy</span>
+                    </div>
+                    <p class="text-2xl font-bold text-base-content">{{ statistika.umumiy_tolanganish_summa|floatformat:0|intcomma }} so'm</p>
+                </div>
+                
+                <!-- Actual Payments -->
+                <div class="bg-base-200 p-4 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-base font-medium text-base-content">Haqiqatda to'langan summa</h3>
+                        <span class="badge badge-success">{{ statistika.tolangan_soni }} ta</span>
+                    </div>
+                    <p class="text-2xl font-bold text-base-content">{{ statistika.total_sum|floatformat:0|intcomma }} so'm</p>
+                </div>
+            </div>
+            
+            <!-- Payment Progress -->
+            <div class="mt-6">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-base font-medium text-base-content">To'lovlar nisbati</h3>
+                    {% if statistika.umumiy_tolanganish_summa > 0 %}
+                    <span class="text-sm font-medium">
+                        {% widthratio statistika.total_sum statistika.umumiy_tolanganish_summa 100 %}% to'langan
+                    </span>
+                    {% else %}
+                    <span class="text-sm font-medium">0% to'langan</span>
+                    {% endif %}
+                </div>
+                <div class="w-full bg-base-200 rounded-full h-4 overflow-hidden">
+                    {% if statistika.umumiy_tolanganish_summa > 0 %}
+                        {% widthratio statistika.total_sum statistika.umumiy_tolanganish_summa 100 as payment_percent %}
+                        <div class="bg-primary h-4 rounded-full transition-all duration-500" 
+                             data-percent="{{ payment_percent }}" id="payment-progress"></div>
+                    {% else %}
+                        <div class="bg-primary h-4 rounded-full w-0"></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Payments Table -->
+    <div class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow overflow-x-auto">
+        <div class="card-body p-6">
+            <h2 class="card-title text-lg text-base-content mb-4">
+                <i class="fas fa-users text-primary mr-2"></i>
+                Mijozlar to'lovlari
+            </h2>
+            
+            <!-- Search and Filter -->
+            <div class="flex flex-col sm:flex-row gap-2 mb-4 justify-between">
+                <div class="form-control w-full sm:max-w-xs">
+                    <div class="input-group">
+                        <input type="text" id="searchInput" placeholder="Mijoz nomini qidirish..." class="input input-bordered w-full" />
+                        <button class="btn btn-square btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <select id="statusFilter" class="select select-bordered">
+                    <option value="all">Barcha to'lovlar</option>
+                    <option value="paid">Faqat to'langan</option>
+                    <option value="unpaid">Faqat to'lanmagan</option>
+                </select>
+            </div>
+            
+            <!-- Table -->
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <th class="bg-base-200">#</th>
+                            <th class="bg-base-200">Mijoz</th>
+                            <th class="bg-base-200 text-center">GPS soni</th>
+                            <th class="bg-base-200 text-right">Abonent to'lov</th>
+                            <th class="bg-base-200 text-center">To'langan</th>
+                            <th class="bg-base-200 text-center">To'lanmagan</th>
+                            <th class="bg-base-200 text-right">To'lov holati</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientTableBody">
+                        {% for tolov in jami_hisobot %}
+                        <tr class="hover:bg-base-200/50 transition-colors client-row {% if tolov.oy_tolov_soni == tolov.gps_count %}paid-row{% elif tolov.oy_tolov_soni == 0 %}unpaid-row{% else %}partial-row{% endif %} cursor-pointer client-row-link" data-client-id="{{ tolov.id }}">
+                            <td class="font-medium">{{ tolov.id }}</td>
+                            <td>
+                                <div class="font-medium">{{ tolov.mijoz }}</div>
+                            </td>
+                            <td class="text-center">{{ tolov.gps_count }}</td>
+                            <td class="text-right font-medium">{{ tolov.abonent_tolov|floatformat:0|intcomma }} so'm</td>
+                            <td class="text-center">
+                                <span class="badge badge-success">{{ tolov.oy_tolov_soni }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-error">{{ tolov.oy_tolanmagan_soni }}</span>
+                            </td>
+                            <td class="text-right">
+                                {% if tolov.oy_tolov_soni == tolov.gps_count %}
+                                <span class="badge badge-success">To'langan</span>
+                                {% elif tolov.oy_tolov_soni == 0 %}
+                                <span class="badge badge-error">To'lanmagan</span>
+                                {% else %}
+                                <span class="badge badge-warning">Qisman</span>
+                                {% endif %}
+                                <a href="{% url 'bugalteriya-detail' tolov.id %}" class="btn btn-xs btn-ghost btn-circle ml-2" onclick="event.stopPropagation();">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-base-content/70">
+                                <div class="flex flex-col items-center justify-center">
+                                    <i class="fas fa-folder-open text-3xl mb-2"></i>
+                                    <p>To'lovlar mavjud emas</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Summary Footer -->
+            <div class="flex flex-col sm:flex-row justify-between items-center mt-4 text-sm text-base-content/70">
+                <div>
+                    Jami: <span class="font-medium">{{ jami_hisobot|length }} ta mijoz</span>
+                </div>
+                <div class="flex gap-2 items-center">
+                    <span class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-full bg-success inline-block"></span>
+                        To'langan
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-full bg-warning inline-block"></span>
+                        Qisman
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-full bg-error inline-block"></span>
+                        To'lanmagan
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add this debugging section that will only be visible when needed -->
+{% if debug %}
+<div class="card bg-base-100 shadow-lg p-4 mb-8">
+    <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold">Debug Information</h3>
+        <div>
+            <a href="?" class="btn btn-sm btn-ghost">Debug rejimini o'chirish</a>
+        </div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="table table-compact w-full">
+            <thead>
+                <tr>
+                    <th>Variable</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Total clients</td>
+                    <td>{{ jami_hisobot|length }}</td>
+                </tr>
+                <tr>
+                    <td>Total GPS devices</td>
+                    <td>{{ statistika.sotilgan_gps_lar_soni }}</td>
+                </tr>
+                <tr>
+                    <td>Paid subscriptions</td>
+                    <td>{{ statistika.tolangan_soni }}</td>
+                </tr>
+                <tr>
+                    <td>Expected payment</td>
+                    <td>{{ statistika.umumiy_tolanganish_summa }}</td>
+                </tr>
+                <tr>
+                    <td>Actual payment</td>
+                    <td>{{ statistika.total_sum }}</td>
+                </tr>
+                <tr>
+                    <td>Timestamp</td>
+                    <td>{{ timestamp }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Individual client data for debugging -->
+    <div class="mt-4">
+        <h4 class="font-bold mb-2">Client Payment Data</h4>
+        <div class="overflow-x-auto">
+            <table class="table table-compact w-full">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Client</th>
+                        <th>GPS Count</th>
+                        <th>Monthly Fee</th>
+                        <th>Paid</th>
+                        <th>Unpaid</th>
+                        <th>Total Expected</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tolov in jami_hisobot %}
+                    <tr>
+                        <td>{{ tolov.id }}</td>
+                        <td>{{ tolov.mijoz }}</td>
+                        <td>{{ tolov.gps_count }}</td>
+                        <td>{{ tolov.abonent_tolov }}</td>
+                        <td>{{ tolov.oy_tolov_soni }}</td>
+                        <td>{{ tolov.oy_tolanmagan_soni }}</td>
+                        <td>{{ tolov.total_expected|floatformat:0|intcomma }} so'm</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Page loaded successfully");
+        
+        // Initialize progress bars with correct width
+        function setProgressBarWidth(id, percent) {
+            const progressBar = document.getElementById(id);
+            if (progressBar) {
+                progressBar.style.width = `${percent}%`;
+            }
+        }
+        
+        // Set initial widths for all progress bars
+        setProgressBarWidth('tolangan-progress', 
+            document.getElementById('tolangan-progress')?.dataset.percent || 0);
+        setProgressBarWidth('tolanmagan-progress', 
+            document.getElementById('tolanmagan-progress')?.dataset.percent || 0);
+        setProgressBarWidth('payment-progress', 
+            document.getElementById('payment-progress')?.dataset.percent || 0);
+
+        // Add click handler for client rows
+        const clientRowsLinks = document.querySelectorAll('.client-row-link');
+        clientRowsLinks.forEach(row => {
+            row.addEventListener('click', function(e) {
+                // Don't trigger if they clicked the view button directly
+                if (e.target.closest('.btn-circle')) {
+                    return;
+                }
+                
+                const clientId = this.dataset.clientId;
+                window.location.href = '{% url "bugalteriya-detail" 999 %}'.replace('999', clientId);
+            });
+        });
+        
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const rows = document.querySelectorAll('.client-row');
+                
+                rows.forEach(row => {
+                    const clientName = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    if (clientName.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+        
+        // Status filter functionality
+        const statusFilter = document.getElementById('statusFilter');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', function() {
+                const filterValue = this.value;
+                const rows = document.querySelectorAll('.client-row');
+                
+                rows.forEach(row => {
+                    if (filterValue === 'all') {
+                        row.style.display = '';
+                    } else if (filterValue === 'paid' && row.classList.contains('paid-row')) {
+                        row.style.display = '';
+                    } else if (filterValue === 'unpaid' && row.classList.contains('unpaid-row')) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}
+

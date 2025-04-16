@@ -53,9 +53,9 @@
                                     <i class="fas fa-user text-gray-400"></i>
                                 </span>
                                 {{ form.olingan_odam }}
-                            </div>
-                        </div>
-                        
+                    </div>
+                </div>
+
                         <div class="form-control">
                             <label class="label">
                                 <span class="label-text font-medium">Telefon raqam</span>
@@ -89,7 +89,7 @@
                             <label class="label">
                                 <span class="label-text-alt text-base-content/60">So'm ko'rinishida, raqamlar bilan kiriting</span>
                             </label>
-                        </div>
+                    </div>
 
                         <div class="form-control">
                             <label class="label">
@@ -105,31 +105,7 @@
                         </div>
                     </div>
 
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium">Holat</span>
-                        </label>
-                        <div class="flex items-center gap-4 px-4 py-2 rounded-lg bg-base-200">
-                            <div class="form-control">
-                                <label class="label cursor-pointer gap-2">
-                                    <!-- Replace the standard Django form field with a direct checkbox -->
-                                    <input type="checkbox" 
-                                           class="checkbox checkbox-success" 
-                                           name="sotildi_sotilmadi" 
-                                           id="id_sotildi_sotilmadi" 
-                                           value="True" 
-                                           {% if form.instance.sotildi_sotilmadi %}checked{% endif %} />
-                                    <span class="label-text">Sotilgan</span>
-                                </label>
-                            </div>
-                            <div class="ml-auto">
-                                <div class="badge badge-lg {% if form.instance.sotildi_sotilmadi %}badge-success{% else %}badge-error{% endif %} gap-1">
-                                    <i class="fas {% if form.instance.sotildi_sotilmadi %}fa-check-circle{% else %}fa-times-circle{% endif %}"></i>
-                                    <span id="status-text">{% if form.instance.sotildi_sotilmadi %}Sotilgan{% else %}Sotilmagan{% endif %}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                   
 
                     <div class="divider">Qo'shimcha ma'lumot</div>
                     

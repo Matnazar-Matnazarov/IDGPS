@@ -1,4 +1,5 @@
 from django import template
+import re
 
 register = template.Library()
 
@@ -15,4 +16,17 @@ def subtract(value, arg):
 @register.filter(name="get_item")
 def get_item(dictionary, key):
     """Dictionary'dan key bo'yicha qiymatni olish"""
-    return dictionary.get(key, None)
+    if dictionary is None:
+        return None
+    return dictionary.get(key)
+
+
+@register.filter(name="mul")
+def multiply(value, arg):
+    """
+    Multiplies the given value by the argument.
+    """
+    try:
+        return float(value) * float(arg)
+    except (ValueError, TypeError):
+        return 0

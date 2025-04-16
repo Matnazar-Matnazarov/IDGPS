@@ -83,22 +83,22 @@ class SotishAddView(View):
                             "gps_list": Sklad.objects.filter(sotildi_sotilmadi=False),
                         },
                     )
-
+               
                 gps_ids_update = []
                 sklad_sotish = []
-
+                
                 for i, gps_id in enumerate(gps_ids):
                     try:
                         gps = Sklad.objects.get(id=gps_id)
                         gps.sotildi_sotilmadi = True
                         gps_ids_update.append(gps)
-
+                        
                         sklad_sotish.append(
                             Sklad_sotish(
-                                sotish=sotish,
-                                sklad=gps,
-                                sim_karta=sim_kartalar[i],
-                                mashina_turi=mashina_turlari[i],
+                        sotish=sotish,
+                        sklad=gps,
+                        sim_karta=sim_kartalar[i],
+                        mashina_turi=mashina_turlari[i],
                                 davlat_raqami=davlat_raqamlari[i],
                             )
                         )
@@ -133,14 +133,14 @@ class SotishAddView(View):
             # Print form errors for debugging
             print("Form errors:", form.errors)
             messages.error(request, "Forma to'g'ri to'ldirilmagan!")
-            return render(
-                request,
-                self.template_name,
+        return render(
+            request,
+            self.template_name,
                 {
                     "form": form,
                     "gps_list": Sklad.objects.filter(sotildi_sotilmadi=False),
                 },
-            )
+        )
 
 
 class SotishUpdateView(LoginRequiredMixin, View):

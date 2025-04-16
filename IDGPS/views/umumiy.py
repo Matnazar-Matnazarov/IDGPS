@@ -133,7 +133,9 @@ class StatistikaView(LoginRequiredMixin, TemplateView):
                 "current_year": selected_year,
                 "current_month": now.month,
                 "yillar": range(2020, now.year + 1),
-                "chart_data": self.prepare_chart_data(monthly_stats, selected_year, current_month),
+                "chart_data": self.prepare_chart_data(
+                    monthly_stats, selected_year, current_month
+                ),
             }
         )
 
@@ -148,11 +150,11 @@ class StatistikaView(LoginRequiredMixin, TemplateView):
         revenue_growth = {}
         gps_penetration = {}
         payment_ratios = {}
-        
+
         for month in range(1, current_month + 1):
             stats = monthly_stats.get(month, {})
             prev_month = month - 1
-            
+
             # Abonentlar o'sishi
             if month > 1 and prev_month in monthly_stats:
                 prev_count = monthly_stats[prev_month]["abonent"]["jami_aktiv"]
@@ -164,48 +166,80 @@ class StatistikaView(LoginRequiredMixin, TemplateView):
                 growth_rates[month] = round(growth_pct, 1)
             else:
                 growth_rates[month] = 0
-            
+
             # Tushum o'sishi
             if month > 1 and prev_month in monthly_stats:
                 prev_revenue = monthly_stats[prev_month]["summa"]["oylik_umumiy_summa"]
                 current_revenue = stats["summa"]["oylik_umumiy_summa"]
                 if prev_revenue > 0:
-                    revenue_pct = ((current_revenue - prev_revenue) / prev_revenue) * 100
+                    revenue_pct = (
+                        (current_revenue - prev_revenue) / prev_revenue
+                    ) * 100
                 else:
                     revenue_pct = 100 if current_revenue > 0 else 0
                 revenue_growth[month] = round(revenue_pct, 1)
             else:
                 revenue_growth[month] = 0
-            
+
             # GPS ulushi
-            total_gps = stats["gps"]["jami_sotilgan"] + stats["gps"]["hozir_skladda_bor"]
+            total_gps = (
+                stats["gps"]["jami_sotilgan"] + stats["gps"]["hozir_skladda_bor"]
+            )
             if total_gps > 0:
-                gps_penetration[month] = round((stats["gps"]["jami_sotilgan"] / total_gps) * 100, 1)
+                gps_penetration[month] = round(
+                    (stats["gps"]["jami_sotilgan"] / total_gps) * 100, 1
+                )
             else:
                 gps_penetration[month] = 0
-            
+
             # To'lovlar nisbati
-            total_subscribers = stats["tolov"]["oylik_tolaganlar"] + stats["tolov"]["oylik_tolamaganlar"]
+            total_subscribers = (
+                stats["tolov"]["oylik_tolaganlar"]
+                + stats["tolov"]["oylik_tolamaganlar"]
+            )
             if total_subscribers > 0:
-                payment_ratios[month] = round((stats["tolov"]["oylik_tolaganlar"] / total_subscribers) * 100, 1)
+                payment_ratios[month] = round(
+                    (stats["tolov"]["oylik_tolaganlar"] / total_subscribers) * 100, 1
+                )
             else:
                 payment_ratios[month] = 0
-        
+
         # Eng ko'p sotilgan oylarni aniqlash
-        monthly_sales = [(month, stats["gps"]["oylik_sotilgan"]) for month, stats in monthly_stats.items()]
+        monthly_sales = [
+            (month, stats["gps"]["oylik_sotilgan"])
+            for month, stats in monthly_stats.items()
+        ]
         monthly_sales.sort(key=lambda x: x[1], reverse=True)
-        top_months = [self.oylar[m-1] for m, _ in monthly_sales[:3]]
-        
+        top_months = [self.oylar[m - 1] for m, _ in monthly_sales[:3]]
+
         # Yillik statistika
         annual_totals = {
-            "total_subscribers": monthly_stats[current_month]["abonent"]["jami_aktiv"] if current_month in monthly_stats else 0,
-            "total_revenue": sum(stats["summa"]["oylik_umumiy_summa"] for stats in monthly_stats.values()),
-            "total_gps_sold": monthly_stats[current_month]["gps"]["jami_sotilgan"] if current_month in monthly_stats else 0,
-            "avg_monthly_growth": sum(growth_rates.values()) / len(growth_rates) if growth_rates else 0,
-            "highest_month": self.oylar[monthly_sales[0][0]-1] if monthly_sales else "",
-            "payment_success_rate": sum(payment_ratios.values()) / len(payment_ratios) if payment_ratios else 0,
+            "total_subscribers": (
+                monthly_stats[current_month]["abonent"]["jami_aktiv"]
+                if current_month in monthly_stats
+                else 0
+            ),
+            "total_revenue": sum(
+                stats["summa"]["oylik_umumiy_summa"] for stats in monthly_stats.values()
+            ),
+            "total_gps_sold": (
+                monthly_stats[current_month]["gps"]["jami_sotilgan"]
+                if current_month in monthly_stats
+                else 0
+            ),
+            "avg_monthly_growth": (
+                sum(growth_rates.values()) / len(growth_rates) if growth_rates else 0
+            ),
+            "highest_month": (
+                self.oylar[monthly_sales[0][0] - 1] if monthly_sales else ""
+            ),
+            "payment_success_rate": (
+                sum(payment_ratios.values()) / len(payment_ratios)
+                if payment_ratios
+                else 0
+            ),
         }
-        
+
         return {
             "growth_rates": growth_rates,
             "revenue_growth": revenue_growth,
@@ -219,8 +253,8 @@ class StatistikaView(LoginRequiredMixin, TemplateView):
                 "accent": "rgba(168, 85, 247, 0.7)",
                 "success": "rgba(34, 197, 94, 0.7)",
                 "error": "rgba(239, 68, 68, 0.7)",
-                "info": "rgba(14, 165, 233, 0.7)"
-            }
+                "info": "rgba(14, 165, 233, 0.7)",
+            },
         }
 
     def get_optimized_stats(self, year, current_month):
@@ -426,8 +460,8 @@ class StatistikaView(LoginRequiredMixin, TemplateView):
                 ),
                 "oylik_masterlik": sales_by_month.get(month, {}).get("masterlik", 0),
                 "sof_foyda": (
-                    sales_by_month.get(month, {}).get("total_summa", 0) - 
-                    sales_by_month.get(month, {}).get("masterlik", 0)
+                    sales_by_month.get(month, {}).get("total_summa", 0)
+                    - sales_by_month.get(month, {}).get("masterlik", 0)
                 ),
             }
 

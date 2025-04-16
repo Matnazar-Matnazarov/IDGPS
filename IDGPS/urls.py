@@ -27,7 +27,11 @@ from .views.sklad import (
     SkladView,
     sklad_list,
 )
-from .views.bugaltiriya import UpdateBugalteriyaView, BugalteriyaView
+from .views.bugaltiriya import (
+    UpdateBugalteriyaView,
+    BugalteriyaView,
+    Bugalteriya_ListView,
+)
 
 urlpatterns = [
     path("", Loginview.as_view(), name="login"),
@@ -49,6 +53,7 @@ urlpatterns = [
     path("mijozlar/", MijozlarView.as_view(), name="mijozlar"),
     path("statistika/", StatistikaView.as_view(), name="statistika"),
     path("bugalteriya/", BugalteriyaView.as_view(), name="bugalteriya"),
+    path("bugalteriya/detail/<int:id>/", BugalteriyaView.as_view(), name="bugalteriya-detail"),
     path(
         "update_bugalteriya/",
         UpdateBugalteriyaView.as_view(),
@@ -68,4 +73,5 @@ urlpatterns = [
     path("note/update/<int:pk>/", NoteEditView.as_view(), name="note-update"),
     path("note/delete/<int:pk>/", NoteDeleteView.as_view(), name="note-delete"),
     path("sklad/add-excel/", GPSAddExcelView.as_view(), name="gps-add-excel"),
+    path("bugalteriya-list/", Bugalteriya_ListView.as_view(), name="bugalteriya-list"),
 ]
