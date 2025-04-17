@@ -12,6 +12,10 @@
         } else {
             document.documentElement.setAttribute('data-theme', 'light');
         }
+        
+        // Apply sidebar state immediately before page rendering
+        const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        document.documentElement.classList.add(sidebarCollapsed ? 'sidebar-is-collapsed' : 'sidebar-is-expanded');
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -90,36 +94,59 @@
     <style>
         [x-cloak] { display: none !important; }
         .sidebar-transition {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            transform-style: preserve-3d;
-            perspective: 1000px;
-            will-change: transform, width;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: width;
+            height: 100vh !important; /* Force sidebar to always be full height */
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
         .sidebar-expanded {
             width: 240px !important; /* Fixed pixel width, important to override other styles */
             min-width: 240px !important;
             max-width: 240px !important;
-            transform: translateZ(0);
         }
         .sidebar-collapsed {
             width: 80px !important; /* Fixed pixel width, important to override other styles */
             min-width: 80px !important;
             max-width: 80px !important;
-            transform: translateZ(0);
         }
         .content-transition {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .content-expanded {
-            margin-left: 250px !important; /* Slightly increased to match sidebar width exactly */
+            margin-left: 240px !important; /* Exactly match sidebar width */
             padding-left: 0 !important; /* Remove any padding to maximize content width */
-            width: calc(100% - 250px) !important; /* Make sure content takes up all available space */
+            width: calc(100% - 240px) !important; /* Make sure content takes up all available space */
         }
         .content-collapsed {
-            margin-left: 90px !important; /* Slightly increased for better spacing */
+            margin-left: 80px !important; /* Exactly match sidebar width */
             padding-left: 0 !important;
-            width: calc(100% - 90px) !important; /* Make sure content takes up all available space */
+            width: calc(100% - 80px) !important; /* Make sure content takes up all available space */
         }
+        
+        /* New document-level classes to prevent sidebar flickering */
+        .sidebar-is-collapsed aside {
+            width: 80px !important;
+            min-width: 80px !important;
+            max-width: 80px !important;
+        }
+        .sidebar-is-expanded aside {
+            width: 240px !important;
+            min-width: 240px !important;
+            max-width: 240px !important;
+        }
+        
+        .sidebar-is-collapsed .flex-1 {
+            margin-left: 80px !important;
+            width: calc(100% - 80px) !important;
+        }
+        .sidebar-is-expanded .flex-1 {
+            margin-left: 240px !important;
+            width: calc(100% - 240px) !important;
+        }
+        
         @media (max-width: 768px) {
             .sidebar-expanded {
                 width: 240px !important;
@@ -127,6 +154,8 @@
                 max-width: 240px !important;
                 transform: translateX(0);
                 z-index: 40;
+                position: fixed;
+                height: 100% !important;
             }
             .sidebar-collapsed {
                 width: 0 !important;
@@ -134,6 +163,8 @@
                 max-width: 0 !important;
                 transform: translateX(-100%);
                 z-index: 40;
+                position: fixed;
+                height: 100% !important;
             }
             .content-expanded, .content-collapsed {
                 margin-left: 0 !important;
@@ -149,6 +180,27 @@
                 bottom: 0;
                 background-color: rgba(0, 0, 0, 0.5);
                 z-index: 30;
+            }
+            
+            /* Mobile styles for document-level classes */
+            .sidebar-is-collapsed aside {
+                width: 0 !important;
+                min-width: 0 !important;
+                max-width: 0 !important;
+                transform: translateX(-100%);
+            }
+            .sidebar-is-expanded aside {
+                width: 240px !important;
+                min-width: 240px !important;
+                max-width: 240px !important;
+                transform: translateX(0);
+                z-index: 40;
+                position: fixed;
+            }
+            
+            .sidebar-is-collapsed .flex-1, .sidebar-is-expanded .flex-1 {
+                margin-left: 0 !important;
+                width: 100% !important;
             }
         }
         .nav-item {
@@ -344,6 +396,88 @@
         main {
             padding: 1rem !important;
         }
+
+        /* Main content adjustments to eliminate gap */
+        .flex-1.flex.flex-col.overflow-x-hidden {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Explicit overrides based on sidebar state */
+        html.sidebar-is-expanded .flex-1.flex.flex-col.overflow-x-hidden,
+        .sidebar-expanded + .flex-1.flex.flex-col.overflow-x-hidden,
+        .content-expanded {
+            margin-left: 40px !important;
+            width: calc(100% - 40px) !important;
+        }
+
+
+        @media (max-width: 768px) {
+            html.sidebar-is-expanded .flex-1.flex.flex-col.overflow-x-hidden,
+            html.sidebar-is-collapsed .flex-1.flex.flex-col.overflow-x-hidden,
+            .sidebar-expanded + .flex-1.flex.flex-col.overflow-x-hidden,
+            .sidebar-collapsed + .flex-1.flex.flex-col.overflow-x-hidden,
+            .content-expanded,
+            .content-collapsed,
+            .flex-1.flex.flex-col.overflow-x-hidden {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+        }
+    </style>
+    
+    <!-- Final overrides for sidebar spacing -->
+    <style>
+        /* Fixed positioning approach */
+        aside {
+            position: fixed !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            z-index: 30 !important;
+            height: 100vh !important;
+        }
+        
+        /* Fixed sidebar widths */
+        aside.sidebar-expanded {
+            width: 240px !important;
+            min-width: 240px !important;
+            max-width: 240px !important;
+        }
+        
+        aside.sidebar-collapsed {
+            width: 80px !important;
+            min-width: 80px !important;
+            max-width: 80px !important;
+        }
+        
+        /* Main content exact offset */
+        .flex-1.flex.flex-col.overflow-x-hidden.content-expanded {
+            margin-left: 40px !important;
+            padding-left: 0 !important;
+            width: calc(100% - 40px) !important;
+        }
+        
+        .flex-1.flex.flex-col.overflow-x-hidden.content-collapsed {
+            margin-left: 0px !important;
+            padding-left: 0 !important;
+            width: calc(100% - 0px) !important;
+        }
+        
+        @media (max-width: 768px) {
+            aside {
+                transform: translateX(-100%);
+            }
+            
+            aside.sidebar-expanded {
+                transform: translateX(0);
+            }
+            
+            .flex-1.flex.flex-col.overflow-x-hidden {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-base-100 font-sans">
@@ -357,6 +491,8 @@
         toggleCollapse() {
             this.sidebarCollapsed = !this.sidebarCollapsed;
             localStorage.setItem('sidebarCollapsed', this.sidebarCollapsed);
+            document.documentElement.classList.toggle('sidebar-is-collapsed', this.sidebarCollapsed);
+            document.documentElement.classList.toggle('sidebar-is-expanded', !this.sidebarCollapsed);
         },
         toggleDarkMode() {
             this.darkMode = !this.darkMode;
@@ -377,18 +513,9 @@
         if (localStorage.getItem('sidebarCollapsed') === null) {
             sidebarCollapsed = window.innerWidth < 768;
             localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+            document.documentElement.classList.add(sidebarCollapsed ? 'sidebar-is-collapsed' : 'sidebar-is-expanded');
+            document.documentElement.classList.remove(sidebarCollapsed ? 'sidebar-is-expanded' : 'sidebar-is-collapsed');
         }
-        
-        // Force redraw of sidebar to ensure correct width
-        setTimeout(() => {
-            const sidebar = document.querySelector('aside');
-            if (sidebar) {
-                sidebar.style.display = 'none';
-                setTimeout(() => {
-                    sidebar.style.display = '';
-                }, 5);
-            }
-        }, 50);
     "
     class="min-h-screen flex bg-base-100 transition-colors duration-200">
         <!-- Mobile sidebar overlay -->
@@ -485,9 +612,9 @@
         </aside>
         
         <!-- Main content -->
-        <div class="flex-1 flex flex-col overflow-x-hidden" :class="{'content-expanded': !sidebarCollapsed, 'content-collapsed': sidebarCollapsed, 'content-transition': true}">
+        <div class="flex-1 flex flex-col overflow-x-hidden p-0 m-0" :class="{'content-collapsed': sidebarCollapsed, 'content-transition': true}">
             <!-- Mobile menu and dark mode toggle -->
-            <div class="md:p-2 p-2 flex items-center justify-between bg-base-100 shadow-sm">
+            <div class="flex items-center justify-between bg-base-100 shadow-sm">
                 <div class="flex items-center">
                     <button @click="toggleCollapse()" class="btn btn-square btn-ghost md:hidden">
                         <i class="fas fa-bars"></i>
@@ -687,36 +814,81 @@
 
     <!-- Add this script at the end of the file, just before the closing body tag -->
     <script>
-        // Additional script to ensure sidebar state consistency across page loads
-        window.addEventListener('load', function() {
-            // Force the sidebar to match localStorage state
-            const sidebarState = localStorage.getItem('sidebarCollapsed');
-            if (sidebarState) {
-                const sidebar = document.querySelector('aside');
+        // Apply sidebar state immediately on DOM loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // This ensures sidebar is properly initialized if Alpine.js is slow to initialize
+            const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            
+            // Apply classes to sidebar and main content for immediate rendering without flicker
+            const sidebar = document.querySelector('aside');
+            const mainContent = document.querySelector('.flex-1');
+            
+            if (sidebar && mainContent) {
+                // Update both sidebar and main content classes
+                sidebar.classList.toggle('sidebar-collapsed', sidebarCollapsed);
+                sidebar.classList.toggle('sidebar-expanded', !sidebarCollapsed);
                 
-                if (sidebar) {
-                    if (sidebarState === 'true') {
-                        sidebar.classList.remove('sidebar-expanded');
-                        sidebar.classList.add('sidebar-collapsed');
-                        
-                        const mainContent = document.querySelector('.flex-1');
-                        if (mainContent) {
-                            mainContent.classList.remove('content-expanded');
-                            mainContent.classList.add('content-collapsed');
-                        }
+                mainContent.classList.toggle('content-collapsed', sidebarCollapsed);
+                mainContent.classList.toggle('content-expanded', !sidebarCollapsed);
+                
+                // Apply fixed position to sidebar immediately
+                sidebar.style.position = 'fixed';
+                sidebar.style.top = '0';
+                sidebar.style.bottom = '0';
+                sidebar.style.left = '0';
+                sidebar.style.height = '100vh';
+                
+                // Set explicit width for main content to ensure no gap
+                if (sidebarCollapsed) {
+                    mainContent.style.marginLeft = '0px';
+                    mainContent.style.width = '100%';
+                } else {
+                    mainContent.style.marginLeft = '40px';
+                    mainContent.style.width = 'calc(100% - 40px)';
+                }
+                
+                // Handle mobile view
+                if (window.innerWidth < 768) {
+                    mainContent.style.marginLeft = '0';
+                    mainContent.style.width = '100%';
+                    
+                    if (sidebarCollapsed) {
+                        sidebar.style.transform = 'translateX(-100%)';
                     } else {
-                        sidebar.classList.remove('sidebar-collapsed');
-                        sidebar.classList.add('sidebar-expanded');
-                        
-                        const mainContent = document.querySelector('.flex-1');
-                        if (mainContent) {
-                            mainContent.classList.remove('content-collapsed');
-                            mainContent.classList.add('content-expanded');
-                        }
+                        sidebar.style.transform = 'translateX(0)';
                     }
                 }
             }
         });
-  </script>
+        
+        // Monitor window resize to adjust sidebar and content positioning
+        window.addEventListener('resize', function() {
+            const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            const sidebar = document.querySelector('aside');
+            const mainContent = document.querySelector('.flex-1');
+            
+            if (sidebar && mainContent) {
+                if (window.innerWidth < 768) {
+                    // Mobile view
+                    mainContent.style.marginLeft = '0';
+                    mainContent.style.width = '100%';
+                    
+                    if (sidebarCollapsed) {
+                        sidebar.style.transform = 'translateX(-100%)';
+                    }
+                } else {
+                    // Desktop view
+                    if (sidebarCollapsed) {
+                        mainContent.style.marginLeft = '0px';
+                        mainContent.style.width = '100%';
+                    } else {
+                        mainContent.style.marginLeft = '40px';
+                        mainContent.style.width = 'calc(100% - 40px)';
+                    }
+                    sidebar.style.transform = 'translateX(0)';
+                }
+            }
+        });
+    </script>
 </body>
 </html>

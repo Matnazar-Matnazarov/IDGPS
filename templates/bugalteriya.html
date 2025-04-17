@@ -4,6 +4,34 @@
 {% load humanize %}
 
 {% block content %}
+<style>
+    /* Ensure button colors display correctly */
+    .btn-success {
+        background-color: hsl(var(--su)) !important;
+        border-color: hsl(var(--su)) !important;
+    }
+    .btn-error {
+        background-color: hsl(var(--er)) !important;
+        border-color: hsl(var(--er)) !important;
+    }
+    .btn-primary {
+        background-color: hsl(var(--p)) !important;
+        border-color: hsl(var(--p)) !important;
+    }
+    .btn-neutral {
+        background-color: hsl(var(--n)) !important;
+        border-color: hsl(var(--n)) !important;
+        color: hsl(var(--nc)) !important;
+    }
+    .btn-ghost {
+        background-color: transparent !important;
+        border: 1px solid hsl(var(--bc) / 0.2) !important;
+        color: hsl(var(--bc)) !important;
+    }
+    .text-white {
+        color: white !important;
+    }
+</style>
 <div class="container mx-auto px-4 py-6">
     <!-- Header Section -->
     <div class="mb-8">
@@ -68,7 +96,7 @@
                 <span class="text-sm">To'lanmagan</span>
             </div>
             <div class="flex items-center gap-2">
-                <div class="badge badge-ghost gap-1">
+                <div class="badge badge-neutral gap-1">
                     <i class="fas fa-circle-notch"></i>
                 </div>
                 <span class="text-sm">Belgilanmagan</span>
@@ -149,18 +177,9 @@
                                             data-yil="{{ current_year }}"
                                             data-type="abonent"
                                             data-is-superuser="{{ request.user.is_superuser|yesno:'true,false' }}"
-                                            class="tolov-btn btn btn-sm btn-circle tooltip"
+                                            class="tolov-btn btn btn-sm btn-circle tooltip {% if tolov.tolov is None %}btn-primary text-white{% elif tolov.abonent.status is True %}btn-success text-white{% elif tolov.abonent.status is False %}btn-error text-white{% else %}btn-neutral{% endif %}"
                                             data-tip="{% if tolov.tolov is None %}To'lovni tasdiqlash{% elif tolov.abonent.status is True %}To'langan{% elif tolov.abonent.status is False %}To'lanmagan{% else %}Belgilanmagan{% endif %}"
-                                            aria-label="{% if tolov.tolov is None %}To'lovni tasdiqlash{% elif tolov.abonent.status is True %}To'langan{% elif tolov.abonent.status is False %}To'lanmagan{% else %}Belgilanmagan{% endif %}"
-                                            {% if tolov.tolov is None %}
-                                                btn-primary text-white
-                                            {% elif tolov.abonent.status is True %}
-                                                btn-success text-white
-                                            {% elif tolov.abonent.status is False %}
-                                                btn-error text-white
-                                            {% else %}
-                                                btn-ghost
-                                            {% endif %}">
+                                            aria-label="{% if tolov.tolov is None %}To'lovni tasdiqlash{% elif tolov.abonent.status is True %}To'langan{% elif tolov.abonent.status is False %}To'lanmagan{% else %}Belgilanmagan{% endif %}">
                                             {% if tolov.tolov is None %}
                                                 <i class="fas fa-plus-circle"></i>
                                             {% elif tolov.abonent.status is True %}
@@ -183,18 +202,9 @@
                                             data-yil="{{ current_year }}"
                                             data-type="sim"
                                             data-is-superuser="{{ request.user.is_superuser|yesno:'true,false' }}"
-                                            class="tolov-btn btn btn-sm btn-circle tooltip"
+                                            class="tolov-btn btn btn-sm btn-circle tooltip {% if tolov.tolov is None %}btn-primary text-white{% elif tolov.sim.status is True %}btn-success text-white{% elif tolov.sim.status is False %}btn-error text-white{% else %}btn-neutral{% endif %}"
                                             data-tip="{% if tolov.tolov is None %}To'lovni tasdiqlash{% elif tolov.sim.status is True %}To'langan{% elif tolov.sim.status is False %}To'lanmagan{% else %}Belgilanmagan{% endif %}"
-                                            aria-label="{% if tolov.tolov is None %}To'lovni tasdiqlash{% elif tolov.sim.status is True %}To'langan{% elif tolov.sim.status is False %}To'lanmagan{% else %}Belgilanmagan{% endif %}"
-                                            {% if tolov.tolov is None %}
-                                                btn-primary text-white
-                                            {% elif tolov.sim.status is True %}
-                                                btn-success text-white
-                                            {% elif tolov.sim.status is False %}
-                                                btn-error text-white
-                                            {% else %}
-                                                btn-ghost
-                                            {% endif %}">
+                                            aria-label="{% if tolov.tolov is None %}To'lovni tasdiqlash{% elif tolov.sim.status is True %}To'langan{% elif tolov.sim.status is False %}To'lanmagan{% else %}Belgilanmagan{% endif %}">
                                             {% if tolov.tolov is None %}
                                                 <i class="fas fa-plus-circle"></i>
                                             {% elif tolov.sim.status is True %}
@@ -226,133 +236,7 @@
         </div>
     </div>
 
-    {% if is_detail_view %}
-    <!-- Client Details -->
-    <div class="mt-6 card bg-base-100 shadow-lg">
-        <div class="card-body">
-            {% for item in bugalteriya_data %}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <h3 class="text-lg font-medium mb-3">Mijoz ma'lumotlari</h3>
-                    <div class="space-y-2">
-                        <div class="flex justify-between">
-                            <span class="text-base-content/70">Mijoz:</span>
-                            <span class="font-medium">{{ item.sotish.mijoz }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-base-content/70">Telefon:</span>
-                            <span class="font-medium">{{ item.sotish.mijoz_tel_raqam }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-base-content/70">Oylik to'lov:</span>
-                            <span class="font-medium">{{ item.sotish.abonent_tulov|intcomma }} so'm</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-base-content/70">GPS qurilmalar:</span>
-                            <span class="font-medium">{{ item.gps_data|length }} ta</span>
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <h3 class="text-lg font-medium mb-3">To'lovlar statistikasi</h3>
-                    <div class="space-y-2">
-                        {% with total_paid=0 total_unpaid=0 %}
-                            {% for gps_item in item.gps_data %}
-                                {% for oy, tolov in gps_item.tolovlar.items %}
-                                    {% if tolov.abonent.status %}
-                                        {% with total_paid=total_paid|add:1 %}{% endwith %}
-                                    {% elif tolov.abonent.status == False %}
-                                        {% with total_unpaid=total_unpaid|add:1 %}{% endwith %}
-                                    {% endif %}
-                                {% endfor %}
-                            {% endfor %}
-                            <div class="flex justify-between">
-                                <span class="text-base-content/70">To'langan:</span>
-                                <span class="font-medium text-success">{{ total_paid }} ta</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-base-content/70">To'lanmagan:</span>
-                                <span class="font-medium text-error">{{ total_unpaid }} ta</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-base-content/70">Jami to'lov:</span>
-                                <span class="font-medium">{{ item.sotish.abonent_tulov|intcomma }} so'm (1 oylik)</span>
-                            </div>
-                        {% endwith %}
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% else %}
-    <!-- Summary Section -->
-    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="card bg-base-100 shadow-lg">
-            <div class="card-body p-4">
-                <div class="flex items-center gap-3">
-                    <div class="bg-success/10 p-3 rounded-full">
-                        <i class="fas fa-check-circle text-success text-lg"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-medium text-base-content/70">To'langan abonentlar</h3>
-                        <p class="text-xl font-bold text-success">0</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card bg-base-100 shadow-lg">
-            <div class="card-body p-4">
-                <div class="flex items-center gap-3">
-                    <div class="bg-error/10 p-3 rounded-full">
-                        <i class="fas fa-times-circle text-error text-lg"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-medium text-base-content/70">To'lanmagan abonentlar</h3>
-                        <p class="text-xl font-bold text-error">0</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card bg-base-100 shadow-lg">
-            <div class="card-body p-4">
-                <div class="flex items-center gap-3">
-                    <div class="bg-primary/10 p-3 rounded-full">
-                        <i class="fas fa-user text-primary text-lg"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-medium text-base-content/70">Mijozlar soni</h3>
-                        <p class="text-xl font-bold text-base-content">{{ bugalteriya_data|length }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card bg-base-100 shadow-lg">
-            <div class="card-body p-4">
-                <div class="flex items-center gap-3">
-                    <div class="bg-secondary/10 p-3 rounded-full">
-                        <i class="fas fa-satellite text-secondary text-lg"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-medium text-base-content/70">GPS qurilmalar</h3>
-                        <p class="text-xl font-bold text-base-content">
-                            {% with count=0 %}
-                                {% for item in bugalteriya_data %}
-                                    {% with next_count=count|add:item.gps_data|length %}
-                                    {% endwith %}
-                                {% endfor %}
-                                {{ next_count|default:0 }}
-                            {% endwith %}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
+ 
 
     <!-- Toast Container -->
     <div id="toast-container" class="fixed bottom-4 right-4 z-50"></div>
@@ -370,7 +254,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Payment button handling
     document.querySelectorAll('.tolov-btn').forEach(button => {
-        button.addEventListener('click', async function() {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
             try {
                 const isSuperuser = this.dataset.isSuperuser === 'true';
                 const paymentType = this.dataset.type;
@@ -384,22 +269,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     // From "To'lovni tasdiqlash" to "To'lanmagan"
                     newStatus = "To'lanmagan";
                     newIcon = "fa-times-circle";
-                    newButtonClass = "btn-error text-white";
+                    newButtonClass = "btn-error";
                 } else if (currentClass.includes('fa-times-circle')) {
                     // From "To'lanmagan" to "To'langan"
                     newStatus = "To'langan";
                     newIcon = "fa-check-circle";
-                    newButtonClass = "btn-success text-white";
+                    newButtonClass = "btn-success";
                 } else if (currentClass.includes('fa-check-circle')) {
                     // From "To'langan" to "Null"
                     newStatus = "Belgilanmagan";
                     newIcon = "fa-circle-notch";
-                    newButtonClass = "btn-ghost";
+                    newButtonClass = "btn-neutral";
                 } else if (currentClass.includes('fa-circle-notch') && isSuperuser) {
                     // From "Null" to "To'lanmagan" (only for superuser)
                     newStatus = "To'lanmagan";
                     newIcon = "fa-times-circle";
-                    newButtonClass = "btn-error text-white";
+                    newButtonClass = "btn-error";
                 } else {
                     return; // No change for other cases
                 }
@@ -448,9 +333,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     this.dataset.tolovId = data.tolov_id;
                 }
 
-                // Update button appearance
-                this.classList.remove('btn-primary', 'btn-success', 'btn-error', 'btn-ghost', 'text-white');
-                this.classList.add(...newButtonClass.split(' '));
+                // Update button appearance without page reload
+                this.classList.remove('btn-primary', 'btn-success', 'btn-error', 'btn-ghost', 'btn-neutral', 'text-white');
+                this.classList.add(newButtonClass, 'text-white');
                 
                 // Update tooltip
                 this.dataset.tip = newStatus;
@@ -462,10 +347,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Show success toast
                 showToast('To\'lov holati muvaffaqiyatli yangilandi', 'success');
                 
-                // Refresh the page after a short delay to show updated data
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
+                // Update summary stats if available (without page reload)
+                updateSummaryStats(paymentType, newStatus);
                 
             } catch (error) {
                 console.error('Xatolik:', error);
@@ -473,6 +356,48 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
+    // Function to update summary statistics when payment status changes
+    function updateSummaryStats(paymentType, newStatus) {
+        if (paymentType !== 'abonent') return; // Only update for abonent payments
+        
+        // Get summary stat elements
+        const tolangan = document.querySelector('.text-success:not(span):not(i)');
+        const tolanmagan = document.querySelector('.text-error:not(span):not(i)');
+        
+        if (!tolangan || !tolanmagan) return;
+        
+        // Update counts based on new status
+        let tolanganCount = parseInt(tolangan.textContent) || 0;
+        let tolanmaganCount = parseInt(tolanmagan.textContent) || 0;
+        
+        if (newStatus === "To'langan") {
+            tolanganCount++;
+            if (tolanmaganCount > 0) tolanmaganCount--;
+        } else if (newStatus === "To'lanmagan") {
+            if (tolanganCount > 0) tolanganCount--;
+            tolanmaganCount++;
+        } else if (newStatus === "Belgilanmagan") {
+            if (tolanganCount > 0) tolanganCount--;
+        }
+        
+        // Update the UI
+        tolangan.textContent = tolanganCount;
+        tolanmagan.textContent = tolanmaganCount;
+        
+        // Update progress bars if they exist
+        const tolanganProgress = document.getElementById('tolangan-progress');
+        const tolanmaganProgress = document.getElementById('tolanmagan-progress');
+        const totalGPS = document.querySelector('.text-xl.font-bold:not(.text-success):not(.text-error)');
+        
+        if (tolanganProgress && tolanmaganProgress && totalGPS) {
+            const total = parseInt(totalGPS.textContent) || 0;
+            if (total > 0) {
+                tolanganProgress.style.width = `${(tolanganCount / total) * 100}%`;
+                tolanmaganProgress.style.width = `${(tolanmaganCount / total) * 100}%`;
+            }
+        }
+    }
 });
 
 function getCookie(name) {
