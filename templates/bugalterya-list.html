@@ -281,7 +281,7 @@
     </div>
     <div class="overflow-x-auto">
         <table class="table table-compact w-full">
-            <thead>
+        <thead>
                 <tr>
                     <th>Variable</th>
                     <th>Value</th>
@@ -322,30 +322,30 @@
         <div class="overflow-x-auto">
             <table class="table table-compact w-full">
                 <thead>
-                    <tr>
-                        <th>ID</th>
+            <tr>
+                <th>ID</th>
                         <th>Client</th>
                         <th>GPS Count</th>
                         <th>Monthly Fee</th>
                         <th>Paid</th>
                         <th>Unpaid</th>
                         <th>Total Expected</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for tolov in jami_hisobot %}
-                    <tr>
-                        <td>{{ tolov.id }}</td>
-                        <td>{{ tolov.mijoz }}</td>
-                        <td>{{ tolov.gps_count }}</td>
-                        <td>{{ tolov.abonent_tolov }}</td>
-                        <td>{{ tolov.oy_tolov_soni }}</td>
-                        <td>{{ tolov.oy_tolanmagan_soni }}</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tolov in jami_hisobot %}
+                <tr>
+                    <td>{{ tolov.id }}</td>
+                    <td>{{ tolov.mijoz }}</td>
+                    <td>{{ tolov.gps_count }}</td>
+                    <td>{{ tolov.abonent_tolov }}</td>
+                    <td>{{ tolov.oy_tolov_soni }}</td>
+                    <td>{{ tolov.oy_tolanmagan_soni }}</td>
                         <td>{{ tolov.total_expected|floatformat:0|intcomma }} so'm</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
         </div>
     </div>
 </div>

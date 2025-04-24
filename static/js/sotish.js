@@ -45,7 +45,7 @@ function updateGpsOptions() {
             if (option.value === '') return; // Skip placeholder option
             if (option.value === currentValue) {
                 option.disabled = false;
-            } else {
+    } else {
                 option.disabled = selectedValues.includes(option.value);
             }
         });
@@ -62,6 +62,24 @@ function addGpsField() {
     newField.style.opacity = '0';
     newField.style.transform = 'translateY(20px)';
     
+    // Get all already selected GPS values to exclude them
+    const gpsSelects = document.querySelectorAll('.gps-select');
+    const selectedValues = Array.from(gpsSelects)
+        .map(select => select.value)
+        .filter(value => value !== '');
+    
+    // Get available options from first select (excluding already selected ones)
+    const firstSelect = document.querySelector('.gps-select');
+    let optionsHTML = '<option value="">GPS tanlang</option>';
+    
+    if (firstSelect) {
+        Array.from(firstSelect.options)
+            .filter(option => option.value !== '' && !selectedValues.includes(option.value))
+            .forEach(option => {
+                optionsHTML += `<option value="${option.value}">${option.textContent}</option>`;
+            });
+    }
+    
     newField.innerHTML = `
         <div class="card-body">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -74,11 +92,7 @@ function addGpsField() {
                             <i class="fas fa-satellite text-gray-400"></i>
                         </span>
                         <select name="gps_id" class="gps-select select-bordered w-full" required onchange="updateGpsOptions()">
-                            <option value="">GPS tanlang</option>
-                            ${Array.from(document.querySelector('.gps-select').options)
-                                .filter(option => option.value !== '')
-                                .map(option => `<option value="${option.value}">${option.text}</option>`)
-                                .join('')}
+                            ${optionsHTML}
                         </select>
                     </div>
                 </div>

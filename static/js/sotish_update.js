@@ -90,33 +90,47 @@ function updateGpsOptions() {
         
         isUpdatingGpsOptions = true;
         
+        // Get all GPS select elements
         const gpsSelects = document.querySelectorAll('.gps-select');
         if (!gpsSelects || gpsSelects.length === 0) {
             isUpdatingGpsOptions = false;
             return;
         }
         
+        console.log(`Updating ${gpsSelects.length} GPS selects`);
+        
+        // Collect all currently selected GPS IDs
         const selectedValues = Array.from(gpsSelects)
             .map(select => select.value)
             .filter(value => value !== '');
         
+        console.log("Selected GPS IDs:", selectedValues);
+        
+        // Loop through each GPS select
         gpsSelects.forEach(select => {
             const currentValue = select.value;
+            
+            // Loop through each option in the select
             Array.from(select.options).forEach(option => {
-                if (option.value === '') return; // Skip placeholder option
+                // Skip the empty placeholder option
+                if (option.value === '') return;
+                
+                // If this is the currently selected option in this dropdown, keep it enabled
                 if (option.value === currentValue) {
                     option.disabled = false;
-    } else {
+                } else {
+                    // Otherwise, disable it if it's selected in another dropdown
                     option.disabled = selectedValues.includes(option.value);
                 }
             });
         });
         
-        // Manually update the UI without triggering change event
-        if (window.jQuery) {
+        // Update Select2 instances if jQuery and Select2 are available
+        if (window.jQuery && $.fn.select2) {
             $('.gps-select').each(function() {
+                // Only refresh if this is a Select2 instance
                 if ($(this).data('select2')) {
-                    // Update UI without triggering events
+                    // Update the Select2 instance without triggering change events
                     $(this).select2('destroy');
                     $(this).select2({
                         theme: 'bootstrap-5',
@@ -151,49 +165,67 @@ function addGpsField() {
         newField.style.opacity = '0';
         newField.style.transform = 'translateY(20px)';
         
-        // Get available GPS options
+        // Get available GPS options - Start with empty option
         let optionsHTML = '<option value="">GPS tanlang</option>';
         
-        // Check if there are already GPS selects
+        // Get all currently selected GPS IDs to exclude them
         const gpsSelects = document.querySelectorAll('.gps-select');
         const selectedValues = Array.from(gpsSelects)
             .map(select => select.value)
             .filter(value => value !== '');
         
-        // Find a select with options to use as a template
-        const firstSelect = document.querySelector('.gps-select');
+        console.log("Currently selected GPS IDs:", selectedValues);
         
-        if (firstSelect && firstSelect.options && firstSelect.options.length > 0) {
-            // Copy options from existing select
-            Array.from(firstSelect.options).forEach(option => {
-                if (option.value !== '' && !selectedValues.includes(option.value)) {
-                    optionsHTML += `<option value="${option.value}">${option.textContent}</option>`;
-                }
-            });
-        } else {
-            // If no existing select with options, try to find available GPSs from a different source
-            const mavjudGpslar = document.querySelectorAll('#mavjud_gpslar option');
-            if (mavjudGpslar && mavjudGpslar.length > 0) {
-                Array.from(mavjudGpslar).forEach(option => {
-                    if (option.value !== '' && !selectedValues.includes(option.value)) {
+        // Find available GPS options from any source
+        let foundOptions = false;
+        
+        // Try to get options from existing selects
+        if (gpsSelects.length > 0) {
+            // Get all available options from first select
+            const firstSelect = gpsSelects[0];
+            if (firstSelect && firstSelect.options) {
+                Array.from(firstSelect.options).forEach(option => {
+                    // Only add options that aren't already selected elsewhere
+                    if (option.value && !selectedValues.includes(option.value)) {
                         optionsHTML += `<option value="${option.value}">${option.textContent}</option>`;
+                        foundOptions = true;
                     }
                 });
-            } else {
-                // Fallback - try to get GPS options from a different field
-                const allSelects = document.querySelectorAll('select');
-                for (const select of allSelects) {
-                    if (select.name === 'gps_id' || select.id === 'id_gps_id' || select.classList.contains('gps-select')) {
-                        Array.from(select.options).forEach(option => {
-                            if (option.value !== '' && !selectedValues.includes(option.value)) {
-                                optionsHTML += `<option value="${option.value}">${option.textContent}</option>`;
-                            }
-                        });
-                        break;
+            }
+        }
+        
+        // If no options found yet, try the #mavjud_gpslar element
+        if (!foundOptions) {
+            const mavjudGpslar = document.getElementById('mavjud_gpslar');
+            if (mavjudGpslar && mavjudGpslar.options) {
+                Array.from(mavjudGpslar.options).forEach(option => {
+                    if (option.value && !selectedValues.includes(option.value)) {
+                        optionsHTML += `<option value="${option.value}">${option.textContent}</option>`;
+                        foundOptions = true;
                     }
+                });
+            }
+        }
+        
+        // Last resort, check all selects on the page
+        if (!foundOptions) {
+            const allSelects = document.querySelectorAll('select');
+            for (const select of allSelects) {
+                if (select.name === 'gps_id' || select.id === 'id_gps_id' || select.classList.contains('gps-select')) {
+                    Array.from(select.options).forEach(option => {
+                        // Skip already selected options and empty option
+                        if (option.value && !selectedValues.includes(option.value)) {
+                            optionsHTML += `<option value="${option.value}">${option.textContent}</option>`;
+                            foundOptions = true;
+                        }
+                    });
+                    // If we found options, no need to check other selects
+                    if (foundOptions) break;
                 }
             }
         }
+        
+        // If still no options, try fetching via AJAX later
         
         newField.innerHTML = `
             <div class="card-body">
@@ -257,50 +289,55 @@ function addGpsField() {
         container.appendChild(newField);
         
         // Initialize Select2 if available
-        if (window.jQuery && $.fn.select2) {
-            const newSelect = newField.querySelector('.gps-select');
-            if (newSelect) {
-                $(newSelect).select2({
-                    theme: 'bootstrap-5',
-                    width: '100%',
-                    placeholder: 'GPS tanlang',
-                    allowClear: false,
-                    templateResult: formatGpsOption,
-                    templateSelection: formatGpsOption,
-                    escapeMarkup: function(m) { return m; }
-                });
+        const newSelect = newField.querySelector('.gps-select');
+        if (window.jQuery && $.fn.select2 && newSelect) {
+            $(newSelect).select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'GPS tanlang',
+                allowClear: false,
+                templateResult: formatGpsOption,
+                templateSelection: formatGpsOption,
+                escapeMarkup: function(m) { return m; }
+            });
+            
+            // Add change handler to update available options when selection changes
+            $(newSelect).on('change', function() {
+                updateGpsOptions();
+            });
+            
+            // If no available options were found in the HTML, try AJAX
+            if (!foundOptions || optionsHTML === '<option value="">GPS tanlang</option>') {
+                console.log("No available GPS options found in HTML, trying AJAX...");
                 
-                // After initializing Select2, add change handler
-                $(newSelect).on('change', function() {
-                    // Update options but in a safe way, without causing infinite loops
-                    setTimeout(updateGpsOptions, 10);
-                });
-                
-                // Load options via AJAX if there are no options
-                if (newSelect.options.length <= 1) {
-                    // Try to fetch available GPS IDs from server
-                    $.ajax({
-                        url: '/api/available-gps/',  // Check if this endpoint exists
-                        type: 'GET',
-                        success: function(data) {
-                            if (data && data.length > 0) {
-                                // Clear existing options
-                                $(newSelect).empty().append('<option value="">GPS tanlang</option>');
-                                
-                                // Add new options
-                                data.forEach(function(gps) {
+                // Try to fetch available GPS IDs from server
+                $.ajax({
+                    url: '/api/available-gps/',  // Check if this endpoint exists
+                    type: 'GET',
+                    success: function(data) {
+                        if (data && data.length > 0) {
+                            console.log("Fetched GPS options via AJAX:", data);
+                            
+                            // Clear existing options
+                            $(newSelect).empty().append('<option value="">GPS tanlang</option>');
+                            
+                            // Add only unselected options
+                            data.forEach(function(gps) {
+                                if (!selectedValues.includes(gps.id.toString())) {
                                     $(newSelect).append(`<option value="${gps.id}">${gps.gps_id}</option>`);
-                                });
-                                
-                                // Refresh Select2
-                                $(newSelect).trigger('change');
-                            }
-                        },
-                        error: function() {
-                            console.error('Failed to fetch available GPS IDs');
+                                }
+                            });
+                            
+                            // Refresh Select2
+                            $(newSelect).trigger('change');
+                        } else {
+                            console.warn("No GPS options returned from AJAX call");
                         }
-                    });
-                }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Failed to fetch available GPS IDs:', error);
+                    }
+                });
             }
         }
         
@@ -311,6 +348,7 @@ function addGpsField() {
             newField.style.transform = 'translateY(0)';
         }, 10);
         
+        // Update available options in all selects
         updateGpsOptions();
     } catch (error) {
         console.error('Error in addGpsField:', error);
@@ -324,6 +362,13 @@ function removeGpsField(button) {
         const field = button.closest('.gps-field');
         if (!field) return;
         
+        // Get the GPS value that's being removed
+        const gpsSelect = field.querySelector('.gps-select');
+        const gpsValue = gpsSelect ? gpsSelect.value : null;
+        
+        console.log(`Removing GPS field with value: ${gpsValue}`);
+        
+        // Animate the removal
         field.style.transition = 'all 0.3s ease-out';
         field.style.opacity = '0';
         field.style.transform = 'translateY(-20px)';
@@ -336,10 +381,66 @@ function removeGpsField(button) {
                     $(select).select2('destroy');
                 }
             }
+            
+            // Remove the field from DOM
             field.remove();
             
-            // Small timeout to update options after the field is removed
-            setTimeout(updateGpsOptions, 10);
+            // Update options in other selects to make the removed GPS available again
+            setTimeout(() => {
+                const gpsSelects = document.querySelectorAll('.gps-select');
+                
+                // If the removed GPS had a value, make it available in other selects
+                if (gpsValue) {
+                    gpsSelects.forEach(select => {
+                        // Find if this select already has this option
+                        const option = Array.from(select.options).find(opt => opt.value === gpsValue);
+                        
+                        if (option) {
+                            // If it exists, just make it enabled
+                            option.disabled = false;
+    } else {
+                            // If not, try to get the text for this option from any existing select
+                            let optionText = '';
+                            const allOptions = document.querySelectorAll('.gps-select option');
+                            for (const opt of allOptions) {
+                                if (opt.value === gpsValue) {
+                                    optionText = opt.textContent;
+                                    break;
+                                }
+                            }
+                            
+                            // If we found the text, add this option
+                            if (optionText) {
+                                const newOption = document.createElement('option');
+                                newOption.value = gpsValue;
+                                newOption.textContent = optionText;
+                                select.appendChild(newOption);
+                            }
+                        }
+                    });
+                }
+                
+                // Update all selects
+                updateGpsOptions();
+                
+                // Update Select2 instances if available
+                if (window.jQuery && $.fn.select2) {
+                    $('.gps-select').each(function() {
+                        if ($(this).data('select2')) {
+                            $(this).select2('destroy');
+                            $(this).select2({
+                                theme: 'bootstrap-5',
+                                width: '100%',
+                                placeholder: 'GPS tanlang',
+                                allowClear: false,
+                                templateResult: formatGpsOption,
+                                templateSelection: formatGpsOption,
+                                escapeMarkup: function(m) { return m; }
+                            });
+                        }
+                    });
+                }
+            }, 10);
         }, 300);
     } catch (error) {
         console.error('Error removing GPS field:', error);

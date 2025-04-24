@@ -308,7 +308,7 @@
                                             <span class="btn btn-square btn-ghost">
                                                 <i class="fas fa-satellite text-gray-400"></i>
                                             </span>
-                                            <select name="gps_id" class="gps-select select-bordered w-full" required onchange="updateGpsOptions()">
+                                            <select name="gps_id" class="gps-select select select-bordered w-full" required onchange="updateGpsOptions()">
                                     <option value="">GPS tanlang</option>
                                     {% for gps in form.fields.gps_id.queryset %}
                                         <option value="{{ gps.id }}">{{ gps.gps_id }}</option>
