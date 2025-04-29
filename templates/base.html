@@ -94,13 +94,8 @@
     <style>
         [x-cloak] { display: none !important; }
         .sidebar-transition {
-            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            will-change: width;
-            height: 100vh !important; /* Force sidebar to always be full height */
-            position: sticky;
-            top: 0;
-            overflow-y: auto;
-            overflow-x: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform, width;
         }
         .sidebar-expanded {
             width: 240px !important; /* Fixed pixel width, important to override other styles */
@@ -113,7 +108,8 @@
             max-width: 80px !important;
         }
         .content-transition {
-            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: margin-left, width;
         }
         .content-expanded {
             margin-left: 240px !important; /* Exactly match sidebar width */
@@ -436,6 +432,7 @@
             left: 0 !important;
             z-index: 30 !important;
             height: 100vh !important;
+            overflow-y: auto !important;
         }
         
         /* Fixed sidebar widths */
@@ -453,17 +450,62 @@
         
         /* Main content exact offset */
         .flex-1.flex.flex-col.overflow-x-hidden.content-expanded {
-            margin-left: 40px !important;
+            margin-left: 240px !important;
             padding-left: 0 !important;
-            width: calc(100% - 40px) !important;
+            width: calc(100% - 240px) !important;
+            height: 100vh !important;
+            overflow-y: auto !important;
+            position: fixed !important;
+            top: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
         }
         
         .flex-1.flex.flex-col.overflow-x-hidden.content-collapsed {
-            margin-left: 0px !important;
+            margin-left: 80px !important;
             padding-left: 0 !important;
-            width: calc(100% - 0px) !important;
+            width: calc(100% - 80px) !important;
+            height: 100vh !important;
+            overflow-y: auto !important;
+            position: fixed !important;
+            top: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
         }
         
+        /* Main content container */
+        main {
+            padding: 1rem !important;
+            min-height: 100vh !important;
+            overflow-y: auto !important;
+            position: relative !important;
+            top: 0 !important;
+        }
+
+        /* Remove any gaps between sidebar and content */
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            height: 100%;
+        }
+
+        /* Ensure main content takes full height */
+        .min-h-screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Fix for content overflow */
+        .flex-1 {
+            overflow-x: hidden;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Mobile styles */
         @media (max-width: 768px) {
             aside {
                 transform: translateX(-100%);
@@ -476,7 +518,50 @@
             .flex-1.flex.flex-col.overflow-x-hidden {
                 margin-left: 0 !important;
                 width: 100% !important;
+                height: 100vh !important;
+                position: fixed !important;
+                top: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
             }
+            
+            main {
+                padding: 1rem !important;
+                min-height: 100vh !important;
+                position: relative !important;
+                top: 0 !important;
+            }
+        }
+
+        /* Sidebar transition improvements */
+        .sidebar-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform, width;
+        }
+
+        /* Mobile overlay improvements */
+        .mobile-sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 29;
+            transition: opacity 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-sidebar-overlay {
+                display: block;
+            }
+        }
+
+        /* Content transition improvements */
+        .content-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: margin-left, width;
         }
     </style>
 </head>
@@ -484,7 +569,7 @@
     <!-- Toast container - Moved outside main app container -->
     <div id="toast-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
     </div>
-
+    
     <div x-data="{ 
         sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true' ? true : false,
         darkMode: localStorage.getItem('darkMode') === 'true',
@@ -816,12 +901,10 @@
     <script>
         // Apply sidebar state immediately on DOM loaded
         document.addEventListener('DOMContentLoaded', function() {
-            // This ensures sidebar is properly initialized if Alpine.js is slow to initialize
             const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            
-            // Apply classes to sidebar and main content for immediate rendering without flicker
             const sidebar = document.querySelector('aside');
             const mainContent = document.querySelector('.flex-1');
+            const overlay = document.querySelector('.mobile-sidebar-overlay');
             
             if (sidebar && mainContent) {
                 // Update both sidebar and main content classes
@@ -837,14 +920,22 @@
                 sidebar.style.bottom = '0';
                 sidebar.style.left = '0';
                 sidebar.style.height = '100vh';
+                sidebar.style.overflowY = 'auto';
                 
-                // Set explicit width for main content to ensure no gap
+                // Set main content position and dimensions
+                mainContent.style.position = 'fixed';
+                mainContent.style.top = '0';
+                mainContent.style.right = '0';
+                mainContent.style.bottom = '0';
+                mainContent.style.overflowY = 'auto';
+                
+                // Set explicit width for main content
                 if (sidebarCollapsed) {
-                    mainContent.style.marginLeft = '0px';
-                    mainContent.style.width = '100%';
+                    mainContent.style.marginLeft = '80px';
+                    mainContent.style.width = 'calc(100% - 80px)';
                 } else {
-                    mainContent.style.marginLeft = '40px';
-                    mainContent.style.width = 'calc(100% - 40px)';
+                    mainContent.style.marginLeft = '240px';
+                    mainContent.style.width = 'calc(100% - 240px)';
                 }
                 
                 // Handle mobile view
@@ -854,8 +945,10 @@
                     
                     if (sidebarCollapsed) {
                         sidebar.style.transform = 'translateX(-100%)';
+                        if (overlay) overlay.style.opacity = '0';
                     } else {
                         sidebar.style.transform = 'translateX(0)';
+                        if (overlay) overlay.style.opacity = '1';
                     }
                 }
             }
@@ -866,6 +959,7 @@
             const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
             const sidebar = document.querySelector('aside');
             const mainContent = document.querySelector('.flex-1');
+            const overlay = document.querySelector('.mobile-sidebar-overlay');
             
             if (sidebar && mainContent) {
                 if (window.innerWidth < 768) {
@@ -875,18 +969,30 @@
                     
                     if (sidebarCollapsed) {
                         sidebar.style.transform = 'translateX(-100%)';
+                        if (overlay) overlay.style.opacity = '0';
+                    } else {
+                        sidebar.style.transform = 'translateX(0)';
+                        if (overlay) overlay.style.opacity = '1';
                     }
                 } else {
                     // Desktop view
                     if (sidebarCollapsed) {
-                        mainContent.style.marginLeft = '0px';
-                        mainContent.style.width = '100%';
+                        mainContent.style.marginLeft = '80px';
+                        mainContent.style.width = 'calc(100% - 80px)';
                     } else {
-                        mainContent.style.marginLeft = '40px';
-                        mainContent.style.width = 'calc(100% - 40px)';
+                        mainContent.style.marginLeft = '240px';
+                        mainContent.style.width = 'calc(100% - 240px)';
                     }
                     sidebar.style.transform = 'translateX(0)';
+                    if (overlay) overlay.style.opacity = '0';
                 }
+                
+                // Ensure proper positioning
+                mainContent.style.position = 'fixed';
+                mainContent.style.top = '0';
+                mainContent.style.right = '0';
+                mainContent.style.bottom = '0';
+                mainContent.style.overflowY = 'auto';
             }
         });
     </script>
