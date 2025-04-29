@@ -46,7 +46,7 @@
                             {{ item.sotish.mijoz }} - To'lovlar
                         {% endfor %}
                     {% else %}
-                        {{ current_year }} yil bugalteriya
+                {{ current_year }} yil bugalteriya
                     {% endif %}
                 </span>
             </h1>
@@ -58,10 +58,10 @@
                     </a>
                 {% else %}
                     <select id="year-select" name="yil" class="select select-bordered select-sm">
-                        {% for yil in years %}
-                        <option value="{{ yil }}" {% if yil == current_year %}selected{% endif %}>{{ yil }}</option>
-                        {% endfor %}
-                    </select>
+                    {% for yil in years %}
+                    <option value="{{ yil }}" {% if yil == current_year %}selected{% endif %}>{{ yil }}</option>
+                    {% endfor %}
+                </select>
                 {% endif %}
                 <button onclick="window.print()" class="btn btn-ghost btn-sm gap-2">
                     <i class="fas fa-print"></i>
@@ -107,25 +107,25 @@
                 </div>
                 <span class="text-sm">To'lovni tasdiqlash</span>
             </div>
+            </div>
         </div>
-    </div>
 
     <!-- Bugalteriya Table -->
     <div class="card bg-base-100 shadow-lg overflow-x-auto">
         <div class="card-body p-0">
             <div class="overflow-x-auto">
                 <table class="table table-zebra w-full">
-                    <thead>
-                        <tr>
+                <thead>
+                    <tr>
                             <th class="bg-base-200 z-10 sticky left-0">Mijoz</th>
                             <th class="bg-base-200 z-10 sticky left-[120px]">GPS</th>
-                            {% for oy in oylar %}
+                        {% for oy in oylar %}
                             <th class="bg-base-200 text-center" colspan="2">{{ oy }}</th>
-                            {% endfor %}
-                        </tr>
-                        <tr>
+                        {% endfor %}
+                    </tr>
+                    <tr>
                             <th colspan="2" class="bg-base-200 z-10 sticky left-0"></th>
-                            {% for oy in oylar %}
+                        {% for oy in oylar %}
                             <th class="bg-base-200 text-center text-xs">
                                 <div class="flex justify-center items-center gap-1">
                                     <i class="fas fa-user text-primary"></i>
@@ -138,14 +138,14 @@
                                     <span>SIM</span>
                                 </div>
                             </th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
+                        {% endfor %}
+                    </tr>
+                </thead>
                     <tbody>
-                        {% for item in bugalteriya_data %}
-                            {% for gps_item in item.gps_data %}
+                    {% for item in bugalteriya_data %}
+                        {% for gps_item in item.gps_data %}
                                 <tr class="hover">
-                                    {% if forloop.first %}
+                                {% if forloop.first %}
                                     <td class="font-medium z-10 sticky left-0 bg-base-100" rowspan="{{ item.gps_data|length }}">
                                         <div class="flex items-center gap-2">
                                             <i class="fas fa-user text-primary"></i>
@@ -153,73 +153,73 @@
                                                 {{ item.sotish.mijoz }}
                                             {% else %}
                                                 <a href="{% url 'bugalteriya-detail' item.sotish.id %}" class="link link-hover link-primary">
-                                                    {{ item.sotish.mijoz }}
+                                    {{ item.sotish.mijoz }}
                                                 </a>
                                             {% endif %}
                                         </div>
-                                    </td>
-                                    {% endif %}
+                                </td>
+                                {% endif %}
                                     <td class="z-10 sticky left-[120px] bg-base-100">
                                         <div class="flex items-center gap-2">
                                             <i class="fas fa-satellite text-secondary"></i>
-                                            {{ gps_item.gps.gps_id }}
+                                    {{ gps_item.gps.gps_id }}
                                         </div>
-                                    </td>
-                                    {% for oy in oylar %}
-                                    {% with tolov=gps_item.tolovlar|get_item:oy %}
-                                    <!-- Abonent to'lovi -->
+                                </td>
+                                {% for oy in oylar %}
+                                {% with tolov=gps_item.tolovlar|get_item:oy %}
+                                <!-- Abonent to'lovi -->
                                     <td class="text-center">
-                                        <button 
-                                            data-tolov-id="{{ tolov.abonent.id }}"
-                                            data-sotish-id="{{ item.sotish.id }}"
-                                            data-gps-id="{{ gps_item.gps.id }}"
-                                            data-oy="{{ oy }}"
-                                            data-yil="{{ current_year }}"
-                                            data-type="abonent"
-                                            data-is-superuser="{{ request.user.is_superuser|yesno:'true,false' }}"
+                                    <button 
+                                        data-tolov-id="{{ tolov.abonent.id }}"
+                                        data-sotish-id="{{ item.sotish.id }}"
+                                        data-gps-id="{{ gps_item.gps.id }}"
+                                        data-oy="{{ oy }}"
+                                        data-yil="{{ current_year }}"
+                                        data-type="abonent"
+                                        data-is-superuser="{{ request.user.is_superuser|yesno:'true,false' }}"
                                             class="tolov-btn btn btn-sm btn-circle tooltip {% if tolov.tolov is None %}btn-primary text-white{% elif tolov.abonent.status is True %}btn-success text-white{% elif tolov.abonent.status is False %}btn-error text-white{% else %}btn-neutral{% endif %}"
                                             data-tip="{% if tolov.tolov is None %}To'lovni tasdiqlash{% elif tolov.abonent.status is True %}To'langan{% elif tolov.abonent.status is False %}To'lanmagan{% else %}Belgilanmagan{% endif %}"
                                             aria-label="{% if tolov.tolov is None %}To'lovni tasdiqlash{% elif tolov.abonent.status is True %}To'langan{% elif tolov.abonent.status is False %}To'lanmagan{% else %}Belgilanmagan{% endif %}">
-                                            {% if tolov.tolov is None %}
+                                        {% if tolov.tolov is None %}
                                                 <i class="fas fa-plus-circle"></i>
-                                            {% elif tolov.abonent.status is True %}
+                                        {% elif tolov.abonent.status is True %}
                                                 <i class="fas fa-check-circle"></i>
-                                            {% elif tolov.abonent.status is False %}
+                                        {% elif tolov.abonent.status is False %}
                                                 <i class="fas fa-times-circle"></i>
-                                            {% else %}
+                                        {% else %}
                                                 <i class="fas fa-circle-notch"></i>
-                                            {% endif %}
-                                        </button>
-                                    </td>
-                                    
-                                    <!-- SIM karta to'lovi -->
+                                        {% endif %}
+                                    </button>
+                                </td>
+                                
+                                <!-- SIM karta to'lovi -->
                                     <td class="text-center">
-                                        <button 
-                                            data-tolov-id="{{ tolov.sim.id }}"
-                                            data-sotish-id="{{ item.sotish.id }}"
-                                            data-gps-id="{{ gps_item.gps.id }}"
-                                            data-oy="{{ oy }}"
-                                            data-yil="{{ current_year }}"
-                                            data-type="sim"
-                                            data-is-superuser="{{ request.user.is_superuser|yesno:'true,false' }}"
+                                    <button 
+                                        data-tolov-id="{{ tolov.sim.id }}"
+                                        data-sotish-id="{{ item.sotish.id }}"
+                                        data-gps-id="{{ gps_item.gps.id }}"
+                                        data-oy="{{ oy }}"
+                                        data-yil="{{ current_year }}"
+                                        data-type="sim"
+                                        data-is-superuser="{{ request.user.is_superuser|yesno:'true,false' }}"
                                             class="tolov-btn btn btn-sm btn-circle tooltip {% if tolov.tolov is None %}btn-primary text-white{% elif tolov.sim.status is True %}btn-success text-white{% elif tolov.sim.status is False %}btn-error text-white{% else %}btn-neutral{% endif %}"
                                             data-tip="{% if tolov.tolov is None %}To'lovni tasdiqlash{% elif tolov.sim.status is True %}To'langan{% elif tolov.sim.status is False %}To'lanmagan{% else %}Belgilanmagan{% endif %}"
                                             aria-label="{% if tolov.tolov is None %}To'lovni tasdiqlash{% elif tolov.sim.status is True %}To'langan{% elif tolov.sim.status is False %}To'lanmagan{% else %}Belgilanmagan{% endif %}">
-                                            {% if tolov.tolov is None %}
+                                        {% if tolov.tolov is None %}
                                                 <i class="fas fa-plus-circle"></i>
-                                            {% elif tolov.sim.status is True %}
+                                        {% elif tolov.sim.status is True %}
                                                 <i class="fas fa-check-circle"></i>
-                                            {% elif tolov.sim.status is False %}
+                                        {% elif tolov.sim.status is False %}
                                                 <i class="fas fa-times-circle"></i>
-                                            {% else %}
+                                        {% else %}
                                                 <i class="fas fa-circle-notch"></i>
-                                            {% endif %}
-                                        </button>
-                                    </td>
-                                    {% endwith %}
-                                    {% endfor %}
-                                </tr>
-                            {% endfor %}
+                                        {% endif %}
+                                    </button>
+                                </td>
+                                {% endwith %}
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
                         {% empty %}
                         <tr>
                             <td colspan="{{ oylar|length|add:2 }}" class="text-center py-10 text-base-content/70">
@@ -229,11 +229,11 @@
                                 </div>
                             </td>
                         </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
+    </div>
     </div>
 
  
@@ -247,9 +247,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Year select handling
     const yearSelect = document.getElementById('year-select');
     if (yearSelect) {
-        yearSelect.addEventListener('change', function() {
+    yearSelect.addEventListener('change', function() {
             window.location.href = `?yil=${this.value}`;
-        });
+    });
     }
 
     // Payment button handling
@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     newButtonClass = "btn-neutral";
                 } else if (currentClass.includes('fa-circle-notch') && isSuperuser) {
                     // From "Null" to "To'lanmagan" (only for superuser)
-                    newStatus = "To'lanmagan";
+                        newStatus = "To'lanmagan";
                     newIcon = "fa-times-circle";
                     newButtonClass = "btn-error";
                 } else {

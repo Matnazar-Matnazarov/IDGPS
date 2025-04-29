@@ -84,7 +84,7 @@ class BugalteriyaView(LoginRequiredMixin, TemplateView):
         bugalteriya_data = []
         
         # If we have a specific client ID, get full data for that client
-        # Otherwise, get all clients
+        # Otherwise, get data for all clients
         target_sotishlar = sotishlar if client_id else sotishlar
         
         for sotish in target_sotishlar:
